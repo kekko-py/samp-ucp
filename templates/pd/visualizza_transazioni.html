@@ -1,0 +1,19 @@
+<div class="container">
+    <nav class="navbar navbar-light bg-light">
+        <div class="container-fluid">
+          <form class="d-flex" method="POST">
+            <input class="form-control me-2" type="search" placeholder="Nome_Cognome" name="user" aria-label="Search">
+            <button class="btn btn-outline-success" type="submit">Search</button>
+          </form>
+          <br><p style="color: lightsalmon;">{{error}}</p><br>
+        </div>
+      </nav>
+      {%for trans in range(len_trans)%}
+        <div class="alert {{transazioni[trans][0]}}" role="alert">
+            <h2>{{transazioni[trans][1]}}</h2>
+            <h5>{{transazioni[trans][2]}}</h5>
+            <p>{{transazioni[trans][3]}}</p>
+        </div>
+    {%endfor%}
+  
+</div>

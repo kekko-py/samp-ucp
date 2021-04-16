@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="it" dir="ltr">
+<style media="screen">
+
+        *{
+          box-sizing: border-box;
+        }
+        body{
+          background-image: url("https://images7.alphacoders.com/576/thumb-1920-576754.jpg");
+          background-color: 	#404040; /* Used if the image is unavailable */
+          background-position: center; /* Center the image */
+          background-repeat: no-repeat; /* Do not repeat the image */
+          background-size: cover; /* Resize the background image to cover the entire container */
+          background-blend-mode:multiply;
+          padding-top:50px;
+          overflow:hidden;
+        }
+        .content{
+          background-color:#435e8a;
+          background-image: url("https://libertycity.net/uploads/gallery/main/59/gallery17_4.jpg");
+          background-position: center; /* Center the image */
+          background-repeat: no-repeat; /* Do not repeat the image */
+          background-size: cover; /* Resize the background image to cover the entire container */
+          width: 1100px;
+          height: 525px;
+          border-radius:10px;
+        }
+        .contenuto{
+          width:850px;
+          height:100%%;
+          float:left;
+          padding:40px;
+          overflow: auto;
+        }
+        .menu{
+          height: 565px;
+          width: 250px;
+          background-color:#292421;
+          border-radius: 22px;
+          float:left;
+          box-shadow: 25px 5px 110px black;
+          margin-top:-20px;
+        }
+        #tasto1{
+          border-radius:20px 20px 0px 0px;
+        }
+        #tasto6{
+          border-radius:0px 0px 20px 20px;
+        }
+        #tasto1:hover{
+          border-radius:5px;
+        }
+        #tasto6:hover{
+          border-radius:5px;
+        }
+        .tasto{
+          background-color:#8bafed;
+          height: 94.2px;
+          width: 100%%;
+          margin-bottom:1px;
+        }
+        .tasto:hover{
+          background-color:#0398fc;
+          width: 110%%;
+          margin-left:-5%%;
+          border-radius:5px;
+        }
+        .tasto:hover h2{
+        }
+
+        .tasto img{
+          width:32px;
+          float: left;
+          margin-left:20px;
+          margin-top:30px;
+        }
+        .tasto a{
+          text-decoration: none;
+        }
+        .tasto h2{
+          color: black;
+          margin-top:0px;
+          float:left;
+          margin-left:30px;
+          margin-top:30px;
+          font-size:30px;
+          font-family: 'Staatliches', cursive;
+
+        }
+        footer a{
+          text-decoration: none;
+          float:right;
+        }
+        footer p{
+          color:#fff;
+          font-family: 'Staatliches', cursive;
+        }
+
+
+      </style>
+
+      <head>
+        <link href="https://fonts.googleapis.com/css2?family=Staatliches&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Kanit&display=swap" rel="stylesheet">
+        <meta charset="utf-8">
+        <title></title>
+      </head>
+
+<body>
+      <center>
+        <div class="content">
+          <div class="menu">
+              <a href="/vip"><div id="tasto1" class="tasto"><img src="/static/icona-corona.png"><h2>VIP</h2></div></a>
+              <a href="/news"><div class="tasto"><img src="/static/icona-news.png"><h2>NEWS</h2></div></a>
+              <a href="/fazione"><div class="tasto"><img src="/static/icona-valigetta.png"><h2>FAZIONE</h2></div></a>
+              <a href="/banca"><div class="tasto"><img src="/static/icona-banca.png"><h2>BANCA</h2></div></a>
+              <a href="#"><div class="tasto"><img src="/static/icona-auto.png"><h2>VEICOLI</h2></div></a>
+              <a href="#"><div id="tasto6" class="tasto"><img src="/static/icona-utente.png"><h2>OOC</h2></div></a>
+          </div>
+
+          <div class="contenuto">%s</div>
+
+        </div>
+      </center>
+      <footer>
+        <a href="https://instagram.com/kekko.py"><p>Detroit City - @kekko.py</p></a>
+      </footer>
+</body>
+</html>

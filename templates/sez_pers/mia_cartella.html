@@ -1,0 +1,12 @@
+<div class="container">
+      <br><p style="color: lightsalmon;">{{error}}</p><br>
+      {%for referto in range(len_cartella)%}
+        <div class="alert {{cartella[referto][0]}}" role="alert">
+            <h5>{{cartella[referto][2]}}</h5>
+            <h5>{{cartella[referto][3]}}</h5>
+            <h6>{{cartella[referto][4]}}</h6>
+            <p>{{cartella[referto][5]}}</p>
+        </div>
+    {%endfor%}
+  
+</div>

@@ -1,0 +1,113 @@
+<style>
+    .bg{
+      background-color: rgba(233, 233, 233, 0);
+      background-image: url("{{url_for('static',filename='back.jpg')}}");
+      background-position: center; /* Center the image */
+      background-repeat: no-repeat; /* Do not repeat the image */
+      background-size: cover; /* Resize the background image to cover the entire container */
+    }
+    .contact-form{
+  background: #fff;
+  width: 100%;
+}
+.contact-form .form-control{
+  border-radius:1rem;
+}
+.contact-image{
+  text-align: center;
+}
+.contact-image img{
+  border-radius: 6rem;
+  width: 11%;
+  margin-top: -3%;
+  transform: rotate(29deg);
+}
+.contact-form form{
+  padding: 14%;
+}
+.contact-form form .row{
+  margin-bottom: -7%;
+}
+.contact-form h3{
+  margin-bottom: 2%;
+  margin-top: -20%;
+  text-align: center;
+  color: #0062cc;
+}
+.contact-form .btnContact {
+  width: 50%;
+  border: none;
+  border-radius: 1rem;
+  padding: 1.5%;
+  background: #dc3545;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+}
+.btnContactSubmit
+{
+  width: 50%;
+  border-radius: 1rem;
+  padding: 1.5%;
+  color: #fff;
+  background-color: #0062cc;
+  border: none;
+  cursor: pointer;
+}
+.box{
+  overflow: auto;
+  height: auto;
+  max-height: 400px;
+  padding: 2rem;
+}
+.row{
+  margin-right: -3.5rem;
+  margin-left: -3.5rem;
+}
+</style>
+
+<div class="container mt-2 contact-form">
+  <div class="contact-image">
+      <img src="https://image.ibb.co/kUagtU/rocket_contact.png" alt="rocket_contact"/>
+  </div>
+  <form method="post">
+      <h3>Servizio Bancario <br> {{s2}}</h3>
+     <div class="row">
+          <div class="col-md-6">
+              <header><h2>{{s1}} &middot; Bonifico</h2></header>
+              <p style="color: darkgoldenrod !important;">Questa transazione può essere rintracciata!</p>
+              <p>{{s3}}</p>
+                <div class="form-group">
+                    <i class="fas fa-user"></i>
+                    <input class="form-control" type="text" name="in_banca_iban" placeholder="Iban Destinatario" id="username" required> 
+                </div>
+
+                <div class="form-group">
+                    <i class="fas fa-envelope"></i>
+                    <input class="form-control" placeholder="Importo Da Inviare" name="in_banca_importo" type="text" id="email" required> 
+                </div>
+
+                <div class="form-group">
+                    <i class="fas fa-lock"></i>
+                    <input class="form-control" type="text" id="password" name="in_banca_oggetto" placeholder="Causale Bonifico" required> 
+                </div>
+              <div class="form-group">
+                  <input type="submit" name="btnSubmit" class="btnContact" value="Invia Bonifico" />
+              </div>
+          </div>
+          <div class="col-md-6">
+            <div class="box">
+              <center>
+                  {%for trans in range(len_transazioni)%}
+                  <div class="alert {{transazioni[trans][0]}}">
+                    <h5>{{transazioni[trans][1]}}</h5>
+                    <h6>{{transazioni[trans][2]}}</h6>
+                    <p>{{transazioni[trans][3]}}</p>
+                </div>
+                {%endfor%}
+              </center>
+            </div>
+          </div>
+      </div>
+  </form>
+</div>

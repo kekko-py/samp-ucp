@@ -1,0 +1,191 @@
+
+<style>
+  *{
+  margin:0;
+  padding:0;
+}
+.bg {
+  background: linear-gradient(#141e30, #243b55);
+}
+body {
+  background: #fbf3ff;
+} 
+
+.myRightCtn {
+  background-image: linear-gradient(45deg, #f046ff, #9b00e8);
+  border-radius: 5px;
+  height: 450px;
+  width: 590px;
+  padding: 25px;
+  color: rgb(192, 192, 192);
+  font-size: 12px; 
+  overflow: auto;
+}
+.myLeftCtn {
+  background: #fff;
+  border-radius: 25px;
+  min-height: 450px;
+  padding: 25px;
+  padding-left: 50px;
+}
+.myLeftCtn header {
+  color: blueviolet;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+.row{
+height: 100%;
+} 
+.myCard {
+  position: relative;
+  background: #fff;
+  height: 100%;
+  border-radius: 25px;
+  -webkit-box-shadow: 0px 10px 40px -10px rgba(0, 0, 0, 0.7);
+  -moz-box-shadow: 0px 10px 40px -10px rgba(0, 0, 0, 0.7);
+  box-shadow: 0px 10px 40px -10px rgba(0, 0, 0, 0.7);
+} 
+.myRightCtn header {
+  color: #fff;
+  font-size: 44px;
+}
+.box {
+  position: static;
+} 
+.myLeftCtn .myInput {
+  width: 230px;
+  border-radius: 25px;
+  padding: 10px;
+  padding-left: 50px;
+  border: none;
+  -webkit-box-shadow: 0px 10px 49px -14px rgba(0, 0, 0, 0.7);
+  -moz-box-shadow: 0px 10px 49px -14px rgba(0, 0, 0, 0.7);
+  box-shadow: 0px 10px 49px -14px rgba(0, 0, 0, 0.7);
+}
+.myLeftCtn .myInput:focus {
+  outline: none;
+} 
+.myForm {
+  position: relative;
+  margin-top: 50px;
+} 
+.myLeftCtn .butt {
+  background: linear-gradient(45deg, #bb36fd, #9b00e8);
+  color: #fff;
+  width: 230px;
+  border: none;
+  border-radius: 25px;
+  padding: 10px;
+  -webkit-box-shadow: 0px 10px 41px -11px rgba(0, 0, 0, 0.7);
+  -moz-box-shadow: 0px 10px 41px -11px rgba(0, 0, 0, 0.7);
+  box-shadow: 0px 10px 41px -11px rgba(0, 0, 0, 0.7);
+} 
+.myLeftCtn .butt:hover {
+  background: linear-gradient(45deg, #c85bff, #b726ff);
+}
+.myLeftCtn .butt:focus {
+  outline: none;
+} 
+.myLeftCtn .fas {
+  position: relative;
+  color: #bb36fd;
+  left: 36px;
+} 
+.butt_out {
+  background: transparent;
+  color: #fff;
+  width: 120px;
+  border: 2px solid#fff;
+  border-radius: 25px;
+  padding: 10px;
+  -webkit-box-shadow: 0px 10px 49px -14px rgba(0, 0, 0, 0.7);
+  -moz-box-shadow: 0px 10px 49px -14px rgba(0, 0, 0, 0.7);
+  box-shadow: 0px 10px 49px -14px rgba(0, 0, 0, 0.7);
+} 
+.butt_out:hover {
+  border: 2px solid#eecbff;
+} 
+.butt_out:focus {
+  outline: none;
+}
+
+.transazione{
+  background: rgba(87, 87, 87, 0.63);
+  border-radius:5px;
+  color:#fff;
+  margin-bottom: 7px;
+  width: 100%;
+  padding:0 10px 0 2px;
+}
+.bordo-rosso{
+  border-left:solid 3px rgb(255, 0, 0);
+}
+.bordo-verde{
+  border-left:solid 3px rgb(0, 228, 133);
+}
+.h2trans {
+  color: #fff;
+  text-align: center;
+}
+</style>
+  <div class="myCard">
+      <div class="row">
+          <div class="col-md-6">
+              <div class="myLeftCtn"> 
+                  <form class="myForm text-center" method="POST" AUTOCOMPLETE="OFF">
+                    <header><h2>{{s1}} &middot; Bonifico</h2></header>
+                    <p style="color: darkgoldenrod !important;">Questa transazione può essere rintracciata!</p>
+                    <p>{{s3}}</p>
+                      <div class="form-group">
+                          <i class="fas fa-user"></i>
+                          <input class="myInput" type="text" name="in_banca_iban" placeholder="Iban Destinatario" id="username" required> 
+                      </div>
+
+                      <div class="form-group">
+                          <i class="fas fa-envelope"></i>
+                          <input class="myInput" placeholder="Importo Da Inviare" name="in_banca_importo" type="text" id="email" required> 
+                      </div>
+
+                      <div class="form-group">
+                          <i class="fas fa-lock"></i>
+                          <input class="myInput" type="text" id="password" name="in_banca_oggetto" placeholder="Causale Bonifico" required> 
+                      </div>
+
+                      <input type="submit" class="butt">
+                      
+                  </form>
+              </div>
+          </div> 
+          <div class="col-md-6 p-1 myRightCtn">
+                      <div class="box">
+                        <center>
+                          <header><h2 class="h2trans">{{s2}} &middot; Transazioni</h2></header>
+                        <br>
+                            {%for trans in range(len_transazioni)%}
+                            <div class="transazione {{transazioni[trans][0]}}">
+                              <h5>{{transazioni[trans][1]}}</h5>
+                              <h6>{{transazioni[trans][2]}}</h6>
+                              <p>{{transazioni[trans][3]}}</p>
+                          </div>
+                          {%endfor%}
+                        </center>
+                      </div>
+          </div>
+      </div>
+  </div>
+
+
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+<!--<h2>{{s2}} &middot; Transazioni</h2>
+  <br>
+  {%for trans in range(len_transazioni)%}
+  <div class="transazione {{transazioni[trans][0]}}">
+    <h5>{{transazioni[trans][1]}}</h5>
+    <h6>{{transazioni[trans][2]}}</h6>
+    <p>{{transazioni[trans][3]}}</p>
+</div>
+{%endfor%}-->
