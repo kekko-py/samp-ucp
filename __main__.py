@@ -22,38 +22,48 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 ################################################################################################################################
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# CREDITS: Francesco De Rosa [@kekko.py] 
-# 27/10/2020   Prima scrittura del codice [Francesco De Rosa (kekko.py)]
-# 30/10/2020   Implementazione delle prime pagine e del config.cfg [Francesco De Rosa (kekko.py)]
-# 12/11/2020   Sviluppato Template professionale con bootstap [Francesco De Rosa (kekko.py)] 
-# 13/11/2020   Sviluppato Pagina Vip [Francesco De Rosa (kekko.py)]
-# 13/11/2020   Inserimento e Modifica del sistema Bancario e Criptobancario [Francesco De Rosa (kekko.py)]
-# 13/11/2020   Sviluppato demo_sampdb con l'integrazione delle modifiche del sitema monetario [Francesco De Rosa (kekko.py)]
-# 14/11/2020   Sviluppato query.cfg e la lettura da parte del __main__.py [Francesco De Rosa (kekko.py)]
-# 14/11/2020   Sviluppato Pagina Banca [Francesco De Rosa (kekko.py)]
-# 14/11/2020   Fixing Pagine esistenti per il responsive [Francesco De Rosa (kekko.py)]
-# 15/11/2020   Sviluppato sistema di salvataggio delle transazioni bancarie automatico [Francesco De Rosa (kekko.py)]
-# 15/11/2020   Sviluppato sistema nuovo arresto [Francesco De Rosa (kekko.py)] 
-# 15/11/2020   Sviluppato sistema nuovo reato e pulisi fedina penale [Francesco De Rosa (kekko.py)] 
-# 15/11/2020   Sviluppato sistema per la pubblicazione degli annunci testuali [Francesco De Rosa (kekko.py)] 
-# 17/11/2020   Sviluppato sistema nuovo referto clinico [Francesco De Rosa (kekko.py)] 
-# 21/11/2020   Sviluppato sistema visualizza fedina [Francesco De Rosa (kekko.py)] 
-# 21/11/2020   Sviluppato sistema visualizza transazioni singolo utente [Francesco De Rosa (kekko.py)] 
-# 21/11/2020   Create le funzioni per le trasazioni totali e singole [Francesco De Rosa (kekko.py)] 
-# 21/11/2020   Sviluppato sistema pulisci fedina pernale [Francesco De Rosa (kekko.py)] 
-# 21/11/2020   Sviluppato sistema pil città [Francesco De Rosa (kekko.py)] 
-# 21/11/2020   Sviluppato sistema verifica validità arruolamento [Francesco De Rosa (kekko.py)] 
-# 21/11/2020   Sviluppato sistema blocca conto [Francesco De Rosa (kekko.py)] 
-# 22/11/2020   Sviluppato sistema sblocca conto [Francesco De Rosa (kekko.py)] 
-# 22/11/2020   Sviluppato sistema Visualizza Cartella Clinica [Francesco De Rosa (kekko.py)] 
-# 22/11/2020   Sviluppato sistema Transazioni digitcoin [Francesco De Rosa (kekko.py)]
-# 22/11/2020   Sviluppato sistema invio sms [Francesco De Rosa (kekko.py)]  
-# 22/11/2020   Sviluppato sistema scrittuara bg [Francesco De Rosa (kekko.py)] 
-# 22/11/2020   Sviluppato sistema lettura bg [Francesco De Rosa (kekko.py)] 
-# 23/11/2020   Sviluppato Creator.py che gestiste le queries [Francesco De Rosa (kekko.py)]
-# 23/11/2020   Sviluppato Sistema anti scam for credits [Francesco De Rosa (kekko.py)]
-# 25/11ate! [Francesco De Rosa (kekko.py)]
+#                                             CREDITS: Francesco De Rosa [@kekko.py] 
+#                              27/10/2020   Prima scrittura del codice [Francesco De Rosa (kekko.py)]
+
+# {UCP V0.9.8}
+#-------------------------------------------------------------
+#SEZIONI:
+
+#	• SEZIONE REGOLAMENTI
+#	• SEZIONE VIP
+#    • SEZIONE NEWS
+#	• SEZIONE FAZIONE
+#	• SEZIONE PERSONAGGIO (Lettura sms, fedina, cartella clinica)
+#	• SEZIONE RINGRAZIAMENTI
+#	• SEZIONE (LINK) Fake-Book.it
+
+#FUNZIONALITÀ FAZIONI:
+
+#        POLIZIA
+#	•	Aggiungi Reato
+#	•	Visualizza reati
+#	•	Avviso news
+#	•	Messaggio privato
+#	•	Verifica arruolamento 
+#	•	Pulisci fedina
+#	•	Veicoli sequestrati 
+
+#        MEDICI
+#	•	Aggiungi Referto clinico
+#	•	Visualizza referti
+#	•	Messaggio privato
+#	•	Avviso news
+                
+#        SAN NEWS
+#	•	Aggiungi news
+#	•	Messaggio privato 
+#-------------------------------------------------------------
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+################################################################################################################################
 
 #_______________CREDITI__________________
 def credts_spam():
@@ -109,7 +119,8 @@ __dbpass__ = config.get("MYSQL", 'password')
 
 try:
    connection = pymysql.connect(host=__host__,user=__dbuser__,password=__dbpass__,database=__dbname__,autocommit=True)    
-   __cursor__ = connection.cursor()
+   connection.close()
+   __cursor__ = True
 except:
     __cursor__ = False
 
@@ -204,6 +215,22 @@ credit = '<div class="small text-light">POWERED BY:</div>@kekko.py</div>'
 #_____________VARIABILI GLOBALI FAZIONE____________
 max_arrest = int(config.get("POLIZIA", 'max_arrest'))
 
+#_____________________║QUERY MYSQL ESECUTORE║­­____________________
+def dbrequest(query,fetch="none"):
+    global connection
+    connection = pymysql.connect(host=__host__,user=__dbuser__,password=__dbpass__,database=__dbname__,autocommit=True)
+    cursor = connection.cursor()
+
+    cursor.execute(query)
+    if fetch=="fetchone": data = cursor.fetchone()
+    elif fetch=="fetchall": data = cursor.fetchall()
+    else: data=0
+
+    cursor.close()
+    connection.close()
+
+    if data!=0: return data
+
 #_____________________║CONTROLLO INPUT ESTERNO║­­____________________
 #Per eventuali attacchi mysql injectiond
 def controllo_input(string):
@@ -222,15 +249,15 @@ bot = telepot.Bot('1698925075:AAHNc8ITikXpcpQUi9N-VtdGlyV_Ow39oXY')
 def save_log(fazione,name,azione,motivazione):
     data_ora = time.ctime()
     if fazione=="pd":
-        __cursor__.execute(f'INSERT INTO logs_polizia (name,azione,motivazione,data_ora) VALUES ("{name}","{azione}","{motivazione}","{data_ora}")')
+        dbrequest(f'INSERT INTO logs_polizia (name,azione,motivazione,data_ora) VALUES ("{name}","{azione}","{motivazione}","{data_ora}")')
         bot.sendMessage(pd_chat_key, f'<b>AGENTE:</b>\n<code>{name}</code>\n<b>AZIONE:</b>\n<code>{azione}</code>\n<b>MOTIVAZIONE:</b>\n<code>{motivazione}</code>', parse_mode= 'html')
         bot.sendMessage(admin_chat_key, f'<b>AGENTE:</b>\n<code>{name}</code>\n<b>AZIONE:</b>\n<code>{azione}</code>\n<b>MOTIVAZIONE:</b>\n<code>{motivazione}</code>', parse_mode= 'html')
     elif fazione=="ems":
-        __cursor__.execute(f'INSERT INTO logs_ems (name,azione,motivazione,data_ora) VALUES ("{name}","{azione}","{motivazione}","{data_ora}")')
+        dbrequest(f'INSERT INTO logs_ems (name,azione,motivazione,data_ora) VALUES ("{name}","{azione}","{motivazione}","{data_ora}")')
         bot.sendMessage(ems_chat_key, f'<b>MEDICO:</b>\n<code>{name}</code>\n<b>AZIONE:</b>\n<code>{azione}</code>\n<b>MOTIVAZIONE:</b>\n<code>{motivazione}</code>', parse_mode= 'html')
         bot.sendMessage(admin_chat_key, f'<b>MEDICO:</b>\n<code>{name}</code>\n<b>AZIONE:</b>\n<code>{azione}</code>\n<b>MOTIVAZIONE:</b>\n<code>{motivazione}</code>', parse_mode= 'html')
     elif fazione=="sfnn":
-        __cursor__.execute(f'INSERT INTO logs_sfnn (name,azione,motivazione,data_ora) VALUES ("{name}","{azione}","{motivazione}","{data_ora}")')
+        dbrequest(f'INSERT INTO logs_sfnn (name,azione,motivazione,data_ora) VALUES ("{name}","{azione}","{motivazione}","{data_ora}")')
         bot.sendMessage(sfnn_chat_key, f'<b>DIPENDENTE:</b>\n<code>{name}</code>\n<b>AZIONE:</b>\n<code>{azione}</code>\n<b>MOTIVAZIONE:</b>\n<code>{motivazione}</code>', parse_mode= 'html')
         bot.sendMessage(admin_chat_key, f'<b>DIPENDENTE:</b>\n<code>{name}</code>\n<b>AZIONE:</b>\n<code>{azione}</code>\n<b>MOTIVAZIONE:</b>\n<code>{motivazione}</code>', parse_mode= 'html')
 #_____________________║GENERATORE E CONTROLLO IBAN║­­____________________
@@ -240,20 +267,18 @@ def generatore_iban():
         prefisso = "555"
         sufisso = str(random.randint(100, 999))
         iban = prefisso+sufisso
-        __cursor__.execute(query1+f'"{iban}"')
-        data = __cursor__.fetchone()
+        data = dbrequest(query1+f'"{iban}"', 'fetchone')
         try:
             iban = data[0]
             i = 1
         except:
             i = 0
-            __cursor__.execute(query2+f'"{iban}" WHERE nome="{session["username"]}"')
+            dbrequest(query2+f'"{iban}" WHERE nome="{session["username"]}"')
             print(iban)
             return home()
 #------------------------------------------------------
 def controllo_iban():
-    __cursor__.execute(query3+f'"{session["username"]}"')
-    data = __cursor__.fetchone()
+    data = dbrequest(query3+f'"{session["username"]}"', "fetchone")
     iban = data[0]
     if not iban:
         return generatore_iban()
@@ -263,15 +288,15 @@ def controllo_iban():
 def add_porz_bg(user,contenuto):
     try:
         data_ora = time.ctime()
-        __cursor__.execute(f'INSERT INTO bg (user,contenuto,data_ora) VALUES ("{user}","{contenuto}","{data_ora}")')
+        dbrequest(f'INSERT INTO bg (user,contenuto,data_ora) VALUES ("{user}","{contenuto}","{data_ora}")')
         return 1
     except:
         return 0
 #----------
 def get_bg(user):
     try:
-        __cursor__.execute('SELECT contenuto,data_ora FROM bg WHERE user="{user}" ORDER BY id DESC')
-        data = __cursor__.fetchall()
+        
+        data = dbrequest('SELECT contenuto,data_ora FROM bg WHERE user="{user}" ORDER BY id DESC', "fetchall")
         return data
     except:
         return 0
@@ -279,7 +304,7 @@ def get_bg(user):
 def sms_send(n_mittente,n_destinatario,contenuto):
     try:
         data_ora = time.ctime()
-        __cursor__.execute(f'INSERT INTO message (n_mittente,n_destinatario,contenuto,data_ora) VALUES ("{n_mittente}","{n_destinatario}","{contenuto}","{data_ora}")')
+        dbrequest(f'INSERT INTO message (n_mittente,n_destinatario,contenuto,data_ora) VALUES ("{n_mittente}","{n_destinatario}","{contenuto}","{data_ora}")')
         return 1
     except:
         return 0
@@ -287,8 +312,7 @@ def sms_send(n_mittente,n_destinatario,contenuto):
 def visualizza_sms(user):
     try:
         sms = []
-        __cursor__.execute(f'SELECT * FROM message WHERE n_destinatario="{user}" ORDER BY id DESC') 
-        data = __cursor__.fetchall()
+        data = dbrequest(f'SELECT * FROM message WHERE n_destinatario="{user}" ORDER BY id DESC', "fetchall") 
         for i in data:
             n_mittente = i[1]
             n_destinatario = i[2]
@@ -312,7 +336,7 @@ def visualizza_sms(user):
 def nuova_news_text(id_faz,autore,news,fazione):
     try:
         tempo_attuale = time.ctime()
-        __cursor__.execute(f'INSERT INTO news (fazid, autore, text_news, data_ora, fazione, immagine, prezzo, numero) VALUES ({id_faz},"{autore}","{news}","{tempo_attuale}","{fazione}","N/A",0,0)')
+        dbrequest(f'INSERT INTO news (fazid, autore, text_news, data_ora, fazione, immagine, prezzo, numero) VALUES ({id_faz},"{autore}","{news}","{tempo_attuale}","{fazione}","N/A",0,0)')
         return 1
     except:
         return 0
@@ -320,11 +344,10 @@ def nuova_news_text(id_faz,autore,news,fazione):
 def nuovo_reato(user,reato,multa,prigione,poliziotto):
     try:
         data_ora = time.ctime()
-        __cursor__.execute(f'INSERT INTO reati (user,reato,multa,prigione,poliziotto,data_ora) VALUES ("{user}","{reato}","{multa}","{prigione}","{poliziotto}","{data_ora}")')
+        dbrequest(f'INSERT INTO reati (user,reato,multa,prigione,poliziotto,data_ora) VALUES ("{user}","{reato}","{multa}","{prigione}","{poliziotto}","{data_ora}")')
         if bool(prigione):
-            __cursor__.execute(query23+f'"{user}"')
-            data = __cursor__.fetchone()
-            __cursor__.execute(f'UPDATE personaggi SET Arresti_ucp={int(data[0])+1} WHERE nome="{user}"')
+            data = dbrequest(query23+f'"{user}"', "fetchone")
+            dbrequest(f'UPDATE personaggi SET Arresti_ucp={int(data[0])+1} WHERE nome="{user}"')
             text_news = f"{user} è stato Arrestato da {poliziotto}, dopo aver pagato una multa di {multa}$, I reati sono: {reato}"
             save_log("pd",poliziotto,"Arresto di "+user,reato)
             #nuova_news_text(id_pula,poliziotto,text_news,"SF-Police Department")
@@ -336,7 +359,7 @@ def nuovo_reato(user,reato,multa,prigione,poliziotto):
 #--------
 def pulisci_fedina(poliziotto,user,motivo=""):
     try:
-        __cursor__.execute(f'DELETE FROM reati WHERE user="{user}"')
+        dbrequest(f'DELETE FROM reati WHERE user="{user}"')
         data_ora = time.ctime()
         save_log("pd",poliziotto,"Pulizia della fedina di "+ user ,motivo)
         return 1
@@ -346,8 +369,7 @@ def pulisci_fedina(poliziotto,user,motivo=""):
 def visualizza_fedina(user):
     try:
         reati = []
-        __cursor__.execute(f'SELECT * FROM reati WHERE user="{user}" ORDER BY id DESC') 
-        data = __cursor__.fetchall()
+        data = dbrequest(f'SELECT * FROM reati WHERE user="{user}" ORDER BY id DESC', "fetchall") 
         for i in data:
             reato = i[2]
             multa = i[3]
@@ -381,9 +403,8 @@ def visualizza_fedina(user):
 def transazione_bank_user(user,tabella):
     
     transazioni = []
-    __cursor__.execute(f'SELECT * FROM {tabella} WHERE mittente="{user}" OR destinatario="{user}" ORDER BY id DESC')
     try:
-        transazioni_data = __cursor__.fetchall()
+        transazioni_data = dbrequest(f'SELECT * FROM {tabella} WHERE mittente="{user}" OR destinatario="{user}" ORDER BY id DESC', "fetchall")
         for i in transazioni_data:
             mittente = i[1]
             destinatario = i[2]
@@ -411,8 +432,7 @@ def transazione_bank_user(user,tabella):
 def pil_citta():
     try:
         pil = 0
-        __cursor__.execute(query22)
-        pil_data = __cursor__.fetchall()
+        pil_data = dbrequest(query22, "fetchall")
         for i in pil_data:
             pil += i[0]
         return pil    
@@ -425,8 +445,7 @@ def transazioni_citta(user=" "):
         else:
             que=f'WHERE mittente="{user}" or destinatario="{user}"'
         transazioni = []
-        __cursor__.execute(f'SELECT * FROM transazioni {que} ORDER BY id DESC')
-        transazioni_data = __cursor__.fetchall()
+        transazioni_data = dbrequest(f'SELECT * FROM transazioni {que} ORDER BY id DESC', "fetchall")
         for i in transazioni_data:
             mittente = i[1]
             destinatario = i[2]
@@ -453,8 +472,7 @@ def transazioni_citta(user=" "):
 #-----------------
 def validata_arruolamento(user):
     try:
-        __cursor__.execute(query23+f'"{user}"')
-        data = __cursor__.fetchone()
+        data = dbrequest(query23+f'"{user}"', "fetchone")
         if data[0] > max_arrest:
             return "no"
         else:
@@ -464,11 +482,9 @@ def validata_arruolamento(user):
 #-------------------
 def blocca_conto_funct(poliziotto,user,motivazione):
     try:
-        __cursor__.execute(query24+f'"{user}"')
-        __cursor__.fetchone()
-        data = __cursor__.fetchone()
+        data = dbrequest(query24+f'"{user}"', "fetchone")
         if data[0] == 1:
-            __cursor__.execute(query25+f'"{user}"')
+            dbrequest(query25+f'"{user}"')
             save_log("pd",poliziotto,"Bloccato il conto di "+user,motivazione)
             return "si"
         else:
@@ -479,11 +495,9 @@ def blocca_conto_funct(poliziotto,user,motivazione):
 #-------------------
 def sblocca_conto(poliziotto,user,motivazione):
     try:
-        __cursor__.execute(query24+f'"{user}"')
-        __cursor__.fetchone()
-        data = __cursor__.fetchone()
+        data = dbrequest(query24+f'"{user}"', "fetchone")
         if data[0] == 0:
-            __cursor__.execute(query26+f'"{user}"')
+            dbrequest(query26+f'"{user}"')
             save_log("pd",poliziotto,"Sbloccato il conto di "+user,motivazione)
             return "si"
         else:
@@ -709,15 +723,13 @@ def modelli_auto(id):
 def visualizza_sequestri():
     try:
         veicoli = []
-        __cursor__.execute("SELECT * FROM veicoli_sequestrati")
-        data = __cursor__.fetchall()
+        data = dbrequest("SELECT * FROM veicoli_sequestrati", "fetchall")
         for i in data:
             id_veh = i[1]
             poliziotto = i[2]
             data_ora = i[3]
 
-            __cursor__.execute(f"SELECT Model,Owner,Assicurazione,Targa FROM vehicles WHERE ID={id_veh}")
-            dativeicolo = __cursor__.fetchone()
+            dativeicolo = dbrequest(f"SELECT Model,Owner,Assicurazione,Targa FROM vehicles WHERE ID={id_veh}", "fetchone")
             modello = modelli_auto(int(dativeicolo[0]))
             owner = dativeicolo[1]
 
@@ -743,7 +755,7 @@ def visualizza_sequestri():
 def nuovo_rapporto_clinico(user,diagnosi,terapia,grado,medico):
     try:
         data_ora = time.ctime()
-        __cursor__.execute(f'INSERT INTO cartella_clinica (user,diagnosi,terapia,grado,medico,data_ora) VALUES ("{user}","{diagnosi}","{terapia}","{grado}","{medico}","{data_ora}")')
+        dbrequest(f'INSERT INTO cartella_clinica (user,diagnosi,terapia,grado,medico,data_ora) VALUES ("{user}","{diagnosi}","{terapia}","{grado}","{medico}","{data_ora}")')
         save_log("ems",medico,f"Ha emesso un referto a {user}",diagnosi)
         return 1
     except:
@@ -756,8 +768,7 @@ def visualizza_cartella_clinica(user):
             que=""
         else:
             que = f'WHERE user="{user}"'
-        __cursor__.execute(f'SELECT * FROM cartella_clinica {que} ORDER BY id DESC')
-        data = __cursor__.fetchall()
+        data = dbrequest(f'SELECT * FROM cartella_clinica {que} ORDER BY id DESC', "fetchall")
         for i in data:
             paziente = i[1]
             diagnosi = i[2]
@@ -893,7 +904,7 @@ def page_not_found(e):
         return pagina
     except:
         print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-        return exit()
+        return quit()
     
 #----------------------------------------------
 #[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
@@ -946,8 +957,7 @@ def login():
     session['account'] = username_login
     #session['username'] = username_login
 
-    __cursor__.execute(query4+f'"{username_login}"')
-    data = __cursor__.fetchone()
+    data = dbrequest(query4+f'"{username_login}"', "fetchone")
     try:
 
         #password_login = hashlib.md5(password_login.encode()).hexdigest()
@@ -969,8 +979,7 @@ def scelta_pg():
     if __state__ == 1:
         if request.method == 'GET':
 
-            __cursor__.execute(f'SELECT PG1,PG2,PG3 FROM accounts WHERE nome="{session["account"]}"')
-            data = __cursor__.fetchone()
+            data = dbrequest(f'SELECT PG1,PG2,PG3 FROM accounts WHERE nome="{session["account"]}"', "fetchone")
             try:
                 session['pg'] = ["","",""]
                 session['pg'][0] = data[0]
@@ -1009,7 +1018,7 @@ def reg():
                 return template % (credit, reg_page)
             except :
                 print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-                return exit()
+                return quit()
 
     else:
         return page_not_found(404)
@@ -1046,7 +1055,7 @@ def vip():
                 return template % (credit, vip_page)
             except :
                 print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-                return exit()
+                return quit()
 
     else:
         return page_not_found(404)
@@ -1064,8 +1073,7 @@ def news():
             return home()
         else:
             notizie=[]
-            __cursor__.execute('SELECT * FROM news ORDER BY id DESC')
-            data = __cursor__.fetchall()
+            data = dbrequest('SELECT * FROM news ORDER BY id DESC', "fetchall")
             for row in data:
                 fazid = row[1]
                 autore = row[2]
@@ -1095,7 +1103,7 @@ def news():
                 return template % (credit, news_page)
             except:
                     print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-                    return exit()
+                    return quit()
     else:
         return page_not_found(404)
 #[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
@@ -1113,13 +1121,11 @@ def banca_post():
                 return banca_get('Hai inserito un carattere Non consentito')
             
             try:
-                __cursor__.execute(query6+f'"{in_banca_iban}"')
-                destinatario_data = __cursor__.fetchone()
+                destinatario_data = dbrequest(query6+f'"{in_banca_iban}"', "fetchone")
                 nome_destinatario = destinatario_data[0]
                 saldo_banca_destinatario = destinatario_data[1]
 
-                __cursor__.execute(query7+f'"{session["username"]}"')
-                data = __cursor__.fetchone()
+                data = dbrequest(query7+f'"{session["username"]}"', "fetchone")
                 iban = data[0]
                 saldo_banca_mittente = data[1]
 
@@ -1127,10 +1133,10 @@ def banca_post():
                     return banca_get('Non Puoi Inviare soldi a te stesso')
 
                 if int(saldo_banca_mittente) >= int(in_banca_importo):
-                    __cursor__.execute(query8+f'{int(saldo_banca_mittente)-int(in_banca_importo)} WHERE iban="{iban}"')
-                    __cursor__.execute(query8+f'{int(saldo_banca_destinatario)+int(in_banca_importo)} WHERE iban="{in_banca_iban}"')
+                    dbrequest(query8+f'{int(saldo_banca_mittente)-int(in_banca_importo)} WHERE iban="{iban}"')
+                    dbrequest(query8+f'{int(saldo_banca_destinatario)+int(in_banca_importo)} WHERE iban="{in_banca_iban}"')
                     tempo_attuale = time.ctime()
-                    __cursor__.execute(f'INSERT INTO transazioni (mittente, destinatario, importo, oggetto, data_ora) VALUES ("{session["username"]}", "{nome_destinatario}", "{in_banca_importo}", "{in_banca_oggetto}", "{tempo_attuale}")')
+                    dbrequest(f'INSERT INTO transazioni (mittente, destinatario, importo, oggetto, data_ora) VALUES ("{session["username"]}", "{nome_destinatario}", "{in_banca_importo}", "{in_banca_oggetto}", "{tempo_attuale}")')
                     return banca_get()
                 else:
                     return banca_get()
@@ -1160,8 +1166,7 @@ def digit_coin_post():
             error="Non Lasciare Campi Vuoti"
             return digit_coin_get(error)
         try:
-            __cursor__.execute(query11+f'"{in_digit_iban}"')
-            destinatario_data = __cursor__.fetchone()
+            destinatario_data = dbrequest(query11+f'"{in_digit_iban}"', "fetchone")
             nome_destinatario = destinatario_data[0]
             saldo_digit_destinatario = destinatario_data[1]
             
@@ -1169,8 +1174,7 @@ def digit_coin_post():
             error="Iban Non Associato"
             return banca_get(error)
         
-        __cursor__.execute(query12+f'"{session["username"]}"')
-        data = __cursor__.fetchone()
+        data = dbrequest(query12+f'"{session["username"]}"', "fetchone")
         iban = data[0]
         saldo_digit_mittente = data[1]
 
@@ -1178,10 +1182,10 @@ def digit_coin_post():
             return digit_coin_get('Non Puoi Inviare soldi a te stesso')
 
         if int(saldo_digit_mittente) >= int(in_digit_importo):
-            __cursor__.execute(query13+f'{int(saldo_digit_mittente)-int(in_digit_importo)} WHERE iban="{iban}"')
-            __cursor__.execute(query13+f'{int(saldo_digit_destinatario)+int(in_digit_importo)} WHERE iban="{in_digit_iban}"')
+            dbrequest(query13+f'{int(saldo_digit_mittente)-int(in_digit_importo)} WHERE iban="{iban}"')
+            dbrequest(query13+f'{int(saldo_digit_destinatario)+int(in_digit_importo)} WHERE iban="{in_digit_iban}"')
             tempo_attuale = time.ctime()
-            __cursor__.execute(f'INSERT INTO transazioni_digit (mittente, destinatario, importo, oggetto, data_ora) VALUES ("{session["username"]}", "{nome_destinatario}", "{saldo_digit_destinatario}", "{in_digit_oggetto}", "{tempo_attuale}")')
+            dbrequest(f'INSERT INTO transazioni_digit (mittente, destinatario, importo, oggetto, data_ora) VALUES ("{session["username"]}", "{nome_destinatario}", "{saldo_digit_destinatario}", "{in_digit_oggetto}", "{tempo_attuale}")')
             return digit_coin_get()
         else:
             return digit_coin_get()
@@ -1199,8 +1203,7 @@ def banca_get(error=""):
                 return login()
             return home()
         else:
-            __cursor__.execute(query19+f'"{session["username"]}"')
-            data = __cursor__.fetchone()
+            data = dbrequest(query19+f'"{session["username"]}"', "fetchone")
             iban = data[0]
             saldo_banca = str(data[1])
 
@@ -1219,7 +1222,7 @@ def banca_get(error=""):
             except :
                 print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
                 
-                return exit()
+                return quit()
     else:
         return page_not_found(404)
 #--------------------------------------
@@ -1231,8 +1234,7 @@ def digit_coin_get(error=""):
                 return login()
             return home()
         else:
-            __cursor__.execute(query19+f'"{session["username"]}"')
-            data = __cursor__.fetchone()
+            data = dbrequest(query19+f'"{session["username"]}"', "fetchone")
             iban = data[0]
             saldo_digit = str(data[2])
 
@@ -1250,7 +1252,7 @@ def digit_coin_get(error=""):
             except :
                 print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
                 
-                return exit()
+                return quit()
     else:
         return page_not_found(404) 
 
@@ -1269,7 +1271,7 @@ def ringraziamenti():
                 return template % (credit, reg_page)
             except :
                 print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-                return exit()
+                return quit()
 
     else:
         return page_not_found(404)
@@ -1279,8 +1281,7 @@ def ringraziamenti():
 @__app__.route('/reg-reato', methods=['GET','POST'])
 def page_reg_reato(m='null',error=""):
     try:
-        __cursor__.execute(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"')
-        data = __cursor__.fetchone()
+        data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
         rank=int(data[0])
     except:
         return home()
@@ -1290,8 +1291,7 @@ def page_reg_reato(m='null',error=""):
                 return login()
             return home()
         else:
-            __cursor__.execute(query21+f'"{session["username"]}"')
-            data = __cursor__.fetchone()
+            data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
                 if request.method == 'GET' or m=='get':
                     page = render_template("pd/reg_reato.html", error=error)
@@ -1303,7 +1303,7 @@ def page_reg_reato(m='null',error=""):
                         return pagina
                     except:
                         print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-                        return exit()
+                        return quit()
                 else:
                     try:
                         sospetto = request.form['sospetto']
@@ -1337,8 +1337,7 @@ def page_reg_reato(m='null',error=""):
 @__app__.route('/fedina-pd', methods=['GET','POST'])
 def page_fedina(m='null',error="",utente_cercato=""):
     try:
-        __cursor__.execute(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"')
-        data = __cursor__.fetchone()
+        data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
         rank=int(data[0])
     except:
         return home()
@@ -1348,8 +1347,7 @@ def page_fedina(m='null',error="",utente_cercato=""):
                 return login()
             return home()
         else:
-            __cursor__.execute(query21+f'"{session["username"]}"')
-            data = __cursor__.fetchone()
+            data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
                 if request.method == 'GET' or m=='get':
 
@@ -1373,7 +1371,7 @@ def page_fedina(m='null',error="",utente_cercato=""):
                         return pagina
                     except:
                         print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-                        return exit()
+                        return quit()
                 else:
                     try:
                         user = request.form['user']
@@ -1395,8 +1393,7 @@ def page_fedina(m='null',error="",utente_cercato=""):
 @__app__.route('/transazioni-pd', methods=['GET','POST'])
 def page_trans(m='null',error="",utente_cercato=" "):
     try:
-        __cursor__.execute(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"')
-        data = __cursor__.fetchone()
+        data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
         rank=int(data[0])
     except:
         return home()
@@ -1406,8 +1403,7 @@ def page_trans(m='null',error="",utente_cercato=" "):
                 return login()
             return home()
         else:
-            __cursor__.execute(query21+f'"{session["username"]}"')
-            data = __cursor__.fetchone()
+            data = dbrequest(query21+f'"{session["username"]}"',"fetchone")
             if int(data[0]) == int(id_pula):
                 if request.method == 'GET' or m=='get':
 
@@ -1431,7 +1427,7 @@ def page_trans(m='null',error="",utente_cercato=" "):
                         return pagina
                     except:
                         print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-                        return exit()
+                        return quit()
                 else:
                     try:
                         user = request.form['user']
@@ -1454,8 +1450,7 @@ def page_trans(m='null',error="",utente_cercato=" "):
 @__app__.route('/send-sms-pd', methods=['GET','POST'])
 def page_send_sms_pd(m='null',error=""):
     try:
-        __cursor__.execute(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"')
-        data = __cursor__.fetchone()
+        data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
         rank=int(data[0])
     except:
         return home()
@@ -1465,8 +1460,7 @@ def page_send_sms_pd(m='null',error=""):
                 return login()
             return home()
         else:
-            __cursor__.execute(query21+f'"{session["username"]}"')
-            data = __cursor__.fetchone()
+            data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
                 if request.method == 'GET' or m=='get':
                     page = render_template("pd/send_sms.html", error=error)
@@ -1478,7 +1472,7 @@ def page_send_sms_pd(m='null',error=""):
                         return pagina
                     except:
                         print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-                        return exit()
+                        return quit()
                 else:
                     try:
                         user = request.form['user']
@@ -1505,8 +1499,7 @@ def page_send_sms_pd(m='null',error=""):
 @__app__.route('/agg-avviso-pd', methods=['GET','POST'])
 def page_avviso_pd(m='null',error=""):
     try:
-        __cursor__.execute(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"')
-        data = __cursor__.fetchone()
+        data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
         rank=int(data[0])
     except:
         return home()
@@ -1516,8 +1509,7 @@ def page_avviso_pd(m='null',error=""):
                 return login()
             return home()
         else:
-            __cursor__.execute(query21+f'"{session["username"]}"')
-            data = __cursor__.fetchone()
+            data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
                 if request.method == 'GET' or m=='get':
                     page = render_template("pd/agg_avviso.html", error=error)
@@ -1529,7 +1521,7 @@ def page_avviso_pd(m='null',error=""):
                         return pagina
                     except:
                         print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-                        return exit()
+                        return quit()
                 else:
                     try:
                         messaggio = request.form['messaggio']
@@ -1557,8 +1549,7 @@ def page_avviso_pd(m='null',error=""):
 @__app__.route('/ver-arruolamento', methods=['GET','POST'])
 def page_ver_arruolamento(m='null',error="",utente_cercato=""):
     try:
-        __cursor__.execute(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"')
-        data = __cursor__.fetchone()
+        data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
         rank=int(data[0])
     except:
         return home()
@@ -1568,8 +1559,7 @@ def page_ver_arruolamento(m='null',error="",utente_cercato=""):
                 return login()
             return home()
         else:
-            __cursor__.execute(query21+f'"{session["username"]}"')
-            data = __cursor__.fetchone()
+            data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
                 if request.method == 'GET' or m=='get':
                     
@@ -1598,7 +1588,7 @@ def page_ver_arruolamento(m='null',error="",utente_cercato=""):
                         return pagina
                     except:
                         print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-                        return exit()
+                        return quit()
                 else:
                     try:
                         user = request.form['user']
@@ -1619,8 +1609,7 @@ def page_ver_arruolamento(m='null',error="",utente_cercato=""):
 @__app__.route('/pulisci-fedina', methods=['GET','POST'])
 def page_pulisci_fedina(m='null',error=""):
     try:
-        __cursor__.execute(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"')
-        data = __cursor__.fetchone()
+        data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
         rank=int(data[0])
     except:
         return home()
@@ -1630,8 +1619,7 @@ def page_pulisci_fedina(m='null',error=""):
                 return login()
             return home()
         else:
-            __cursor__.execute(query21+f'"{session["username"]}"')
-            data = __cursor__.fetchone()
+            data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
                 if request.method == 'GET' or m=='get':
                     page = render_template("pd/pulisci_fedina.html", error=error)
@@ -1643,7 +1631,7 @@ def page_pulisci_fedina(m='null',error=""):
                         return pagina
                     except:
                         print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-                        return exit()
+                        return quit()
                 else:
                     try:
                         user = request.form['user']
@@ -1669,8 +1657,7 @@ def page_pulisci_fedina(m='null',error=""):
 @__app__.route('/veh-seq', methods=['GET','POST'])
 def veh_seq(m='null',error=""):
     try:
-        __cursor__.execute(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"')
-        data = __cursor__.fetchone()
+        data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
         rank=int(data[0])
     except:
         return home()
@@ -1680,8 +1667,7 @@ def veh_seq(m='null',error=""):
                 return login()
             return home()
         else:
-            __cursor__.execute(query21+f'"{session["username"]}"')
-            data = __cursor__.fetchone()
+            data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
                 if request.method == 'GET' or m=='get':
 
@@ -1703,7 +1689,7 @@ def veh_seq(m='null',error=""):
                         return pagina
                     except:
                         print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-                        return exit()
+                        return quit()
             else:
                  return page_not_found(404)
     else:
@@ -1715,8 +1701,7 @@ def veh_seq(m='null',error=""):
 @__app__.route('/agg-referto', methods=['GET','POST'])
 def page_agg_referto(m='null',error=""):
     try:
-        __cursor__.execute(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"')
-        data = __cursor__.fetchone()
+        data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
         rank=int(data[0])
     except:
         return home()
@@ -1726,8 +1711,7 @@ def page_agg_referto(m='null',error=""):
                 return login()
             return home()
         else:
-            __cursor__.execute(query21+f'"{session["username"]}"')
-            data = __cursor__.fetchone()
+            data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_ems):
                 if request.method == 'GET' or m=='get':
                     page = render_template("ems/aggiungi-referto.html", error=error)
@@ -1739,7 +1723,7 @@ def page_agg_referto(m='null',error=""):
                         return pagina
                     except:
                         print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-                        return exit()
+                        return quit()
                 else:
                     try:
                         paziente = request.form['paziente']
@@ -1767,8 +1751,7 @@ def page_agg_referto(m='null',error=""):
 @__app__.route('/cartella-clinica-ems', methods=['GET','POST'])
 def page_cartella_clinica(m='null',error="",utente_cercato=""):
     try:
-        __cursor__.execute(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"')
-        data = __cursor__.fetchone()
+        data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
         rank=int(data[0])
     except:
         return home()
@@ -1778,8 +1761,7 @@ def page_cartella_clinica(m='null',error="",utente_cercato=""):
                 return login()
             return home()
         else:
-            __cursor__.execute(query21+f'"{session["username"]}"')
-            data = __cursor__.fetchone()
+            data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_ems):
                 if request.method == 'GET' or m=='get':
 
@@ -1803,7 +1785,7 @@ def page_cartella_clinica(m='null',error="",utente_cercato=""):
                         return pagina
                     except:
                         print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-                        return exit()
+                        return quit()
                 else:
                     try:
                         user = request.form['user']
@@ -1823,8 +1805,7 @@ def page_cartella_clinica(m='null',error="",utente_cercato=""):
 @__app__.route('/agg-avviso-ems', methods=['GET','POST'])
 def page_avviso_ems(m='null',error=""):
     try:
-        __cursor__.execute(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"')
-        data = __cursor__.fetchone()
+        data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
         rank=int(data[0])
     except:
         return home()
@@ -1834,8 +1815,7 @@ def page_avviso_ems(m='null',error=""):
                 return login()
             return home()
         else:
-            __cursor__.execute(query21+f'"{session["username"]}"')
-            data = __cursor__.fetchone()
+            data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_ems):
                 if request.method == 'GET' or m=='get':
                     page = render_template("ems/agg_avviso.html", error=error)
@@ -1847,7 +1827,7 @@ def page_avviso_ems(m='null',error=""):
                         return pagina
                     except:
                         print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-                        return exit()
+                        return quit()
                 else:
                     try:
                         messaggio = request.form['messaggio']
@@ -1873,8 +1853,7 @@ def page_avviso_ems(m='null',error=""):
 @__app__.route('/send-sms-ems', methods=['GET','POST'])
 def page_send_sms_ems(m='null',error=""):
     try:
-        __cursor__.execute(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"')
-        data = __cursor__.fetchone()
+        data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
         rank=int(data[0])
     except:
         return home()
@@ -1884,8 +1863,7 @@ def page_send_sms_ems(m='null',error=""):
                 return login()
             return home()
         else:
-            __cursor__.execute(query21+f'"{session["username"]}"')
-            data = __cursor__.fetchone()
+            data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_ems):
                 if request.method == 'GET' or m=='get':
                     page = render_template("ems/send_sms.html", error=error)
@@ -1897,7 +1875,7 @@ def page_send_sms_ems(m='null',error=""):
                         return pagina
                     except:
                         print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-                        return exit()
+                        return quit()
                 else:
                     try:
                         user = request.form['user']
@@ -1927,8 +1905,7 @@ def page_send_sms_ems(m='null',error=""):
 @__app__.route('/send-sms-sfnn', methods=['GET','POST'])
 def page_send_sms_sfnn(m='null',error=""):
     try:
-        __cursor__.execute(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"')
-        data = __cursor__.fetchone()
+        data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
         rank=int(data[0])
     except:
         return home()
@@ -1938,8 +1915,7 @@ def page_send_sms_sfnn(m='null',error=""):
                 return login()
             return home()
         else:
-            __cursor__.execute(query21+f'"{session["username"]}"')
-            data = __cursor__.fetchone()
+            data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_sfnn):
                 if request.method == 'GET' or m=='get':
                     page = render_template("sfnn/send_sms.html", error=error)
@@ -1951,7 +1927,7 @@ def page_send_sms_sfnn(m='null',error=""):
                         return pagina
                     except:
                         print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-                        return exit()
+                        return quit()
                 else:
                     try:
                         user = request.form['user']
@@ -1978,8 +1954,7 @@ def page_send_sms_sfnn(m='null',error=""):
 @__app__.route('/agg-avviso-sfnn', methods=['GET','POST'])
 def page_avviso_sfnn(m='null',error=""):
     try:
-        __cursor__.execute(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"')
-        data = __cursor__.fetchone()
+        data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
         rank=int(data[0])
     except:
         return home()
@@ -1989,8 +1964,7 @@ def page_avviso_sfnn(m='null',error=""):
                 return login()
             return home()
         else:
-            __cursor__.execute(query21+f'"{session["username"]}"')
-            data = __cursor__.fetchone()
+            data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_sfnn):
                 if request.method == 'GET' or m=='get':
                     page = render_template("sfnn/agg_avviso.html", error=error)
@@ -2002,7 +1976,7 @@ def page_avviso_sfnn(m='null',error=""):
                         return pagina
                     except:
                         print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-                        return exit()
+                        return quit()
                 else:
                     try:
                         messaggio = request.form['messaggio']
@@ -2034,8 +2008,7 @@ def allowed_file(filename):
 @__app__.route('/articolo-sfnn', methods=['GET','POST'])
 def page_articolo_sfnn(m='null',error=""):
     try:
-        __cursor__.execute(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"')
-        data = __cursor__.fetchone()
+        data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
         rank=int(data[0])
     except:
         return home()
@@ -2045,8 +2018,7 @@ def page_articolo_sfnn(m='null',error=""):
                 return login()
             return home()
         else:
-            __cursor__.execute(query21+f'"{session["username"]}"')
-            data = __cursor__.fetchone()
+            data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_sfnn):
                 if request.method == 'GET' or m=='get':
                     page = render_template("sfnn/crea_articolo.html", error=error)
@@ -2058,7 +2030,7 @@ def page_articolo_sfnn(m='null',error=""):
                         return pagina
                     except:
                         print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-                        return exit()
+                        return quit()
                 else:
                     try:
                         __app__.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -2106,14 +2078,13 @@ def fazione_null():
         return template % (credit, page)
     except :
         print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-        return exit()
+        return quit()
 
 # PAGINA FAZIONE POLIZIA GET
 def fazione_polizia_get():
     global registra_reato,visualizza_fedpen,visualizza_trans,blocca_conto,verifica_arruolamento,avviso_comunale_pol,mess_priv_pol,pulizia_fedina,veicoli_seq
 
-    __cursor__.execute(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"')
-    data = __cursor__.fetchone()
+    data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
     rank=int(data[0])
 
     loc_registra_reato = int(funzionalita.get("POLIZIA",'registra_reato'))
@@ -2187,14 +2158,13 @@ def fazione_polizia_get():
         return template % (credit, page)
     except :
         print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-        return exit()
+        return quit()
 
 #PAGINA FAZIONE MEDICI GET
 def fazione_ems_get():
     global visualizza_cartella,agg_referto,avviso_comunale_med,mess_priv_med
 
-    __cursor__.execute(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"')
-    data = __cursor__.fetchone()
+    data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
     rank=int(data[0])
 
     loc_visualizza_cartella = int(funzionalita.get("MEDICI",'visualizza_cartella'))
@@ -2234,15 +2204,14 @@ def fazione_ems_get():
         return template % (credit, page)
     except :
         print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-        return exit()
+        return quit()
 
 
 #PAGINA FAZIONE SFNN
 def fazione_sfnn_get():
     global crea_articolo,avviso_comunale_sfnn,mess_priv_sfnn
 
-    __cursor__.execute(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"')
-    data = __cursor__.fetchone()
+    data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
     rank=int(data[0])
 
     loc_crea_articolo = int(funzionalita.get("SFNN",'articolo'))
@@ -2275,7 +2244,7 @@ def fazione_sfnn_get():
         return template % (credit, page)
     except :
         print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-        return exit()
+        return quit()
 
 #---------------------------------------------------------------------------------------------
 @__app__.route('/fazione', methods=['GET','POST'])
@@ -2287,8 +2256,8 @@ def fazione(error=""):
             return home()
         else:
             try:
-                __cursor__.execute(f'SELECT Faction FROM personaggi WHERE nome="{session["username"]}"')
-                data = __cursor__.fetchone()
+                
+                data = dbrequest(f'SELECT Faction FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
                 faction=int(data[0])
 
             except: 
@@ -2335,7 +2304,7 @@ def mia_fedina(error=""):
                 return pagina
             except:
                 print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-                return exit()
+                return quit()
     else:
         return page_not_found(404)
 
@@ -2366,7 +2335,7 @@ def mia_cartella(m='null',error=""):
                 return pagina
             except:
                 print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-                return exit()
+                return quit()
                    
     else:
         return page_not_found(404)   
@@ -2397,7 +2366,7 @@ def personaggio(error=""):
                 return template % (credit, page)
             except:
                 print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
-                return exit()
+                return quit()
     else:
         return page_not_found(404)
 #---------------------------------------------------------------------------------------------
