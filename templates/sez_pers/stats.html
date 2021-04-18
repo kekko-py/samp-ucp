@@ -1,0 +1,45 @@
+<!--[SKIN, AGE, PHONENUMBER, PHONECREDIT, MONEY, BANKMONEY]
+   [id_model,model,fuel,insurance,value]  -->
+
+<div class="row">
+
+<div class="col">    
+<div class="card bg-dark mb-3" style="width: 18rem;">
+    <center>
+    <img src="https://assets.open.mp/assets/images/skins/{{stats[0]}}.png" style="width:100px !important;" class="card-img-top" alt="SKIN HD">
+    <div class="card-body">
+      <h5 class="card-title text-white">{{username}}</h5>
+    </div>
+    </center>
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item">Età: {{stats[1]}} Anni</li>
+      <li class="list-group-item">Numero: {{stats[2]}}</li>
+      <li class="list-group-item">Credito: {{stats[3]}} pnt.</li>
+      <li class="list-group-item">Soldi: {{stats[4]}}$</li>
+      <li class="list-group-item">Banca: {{stats[5]}}$</li>
+    </ul>
+  </div>
+</div>
+
+<div class="col">
+{%for v in range(len_veh)%}
+  <div class="card mb-3 bg-dark text-white" style="width: 800px;">
+    <div class="row g-0">
+      <div class="col-md-4">
+        <img src="https://assets.open.mp/assets/images/vehiclePictures/Vehicle_{{veh[v][0]}}.jpg"  style="width:250px !important;" alt="...">
+      </div>
+      <div class="col-md-8">
+        <div class="card-body">
+          <h2 class="card-title">{{veh[v][1]}}</h5>
+          <p class="card-text">BENZINA: {{veh[v][2]}} litri</p>
+          <p class="card-text">{{veh[v][3]}}</p>
+          <p class="card-text">{{veh[v][4]}}$ (40% del valore in quanto USATO)</p>
+        </div>
+      </div>
+    </div>
+  </div>
+{%endfor%}
+</div>
+
+
+</div>

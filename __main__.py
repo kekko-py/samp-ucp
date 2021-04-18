@@ -28,13 +28,14 @@
 #                                             CREDITS: Francesco De Rosa [@kekko.py] 
 #                              27/10/2020   Prima scrittura del codice [Francesco De Rosa (kekko.py)]
 
+# 
 # {UCP V0.9.8}
 #-------------------------------------------------------------
 #SEZIONI:
 
 #	• SEZIONE REGOLAMENTI
 #	• SEZIONE VIP
-#    • SEZIONE NEWS
+#   • SEZIONE NEWS
 #	• SEZIONE FAZIONE
 #	• SEZIONE PERSONAGGIO (Lettura sms, fedina, cartella clinica)
 #	• SEZIONE RINGRAZIAMENTI
@@ -61,6 +62,13 @@
 #	•	Aggiungi news
 #	•	Messaggio privato 
 #-------------------------------------------------------------
+
+# {UCP V0.9.9} Primo sviluppo 18/04/2021 [Francesco De Rosa (kekko.py)]
+
+#   • Aggiunta La funzionalità Statistiche nella sezione Personaggio.
+#   • Aggiunta la possibiltà di cambiare il personaggio senza logout.
+#   • Modificato il corpo della sezione ringraziamenti.
+#   • Fixato il bug che faceva bloccare l'ucp a tutti a causa del timeout del Mysql.
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 ################################################################################################################################
@@ -77,7 +85,7 @@ def credts_spam():
               /|   |---- COFFEE TO CODE ----|   |\\ 
                 \\______________________________/
 
-                          v0.9.6 [BETA]
+                          v0.9.9 [BETA]
     ######################################################
     '''+ Fore.RESET
 
@@ -751,6 +759,7 @@ def visualizza_sequestri():
         return veicoli   
     except:
         return 0
+
 #_____________________║CARTELLA CLINICA SYSTEM║­­____________________
 def nuovo_rapporto_clinico(user,diagnosi,terapia,grado,medico):
     try:
@@ -796,7 +805,32 @@ def visualizza_cartella_clinica(user):
     except:
         return 0
 
+def load_stats(username):
+#Return Array --> [SKIN, AGE, PHONENUMBER, PHONECREDIT, MONEY, BANKMONEY]
+    try:
+        data = dbrequest(f'SELECT Skin,Age,PhoneNumber,TrafficoCell,Money,Bank FROM personaggi WHERE nome="{username}"', "fetchone")
+        return data
+    except:
+        return 0
 
+def load_veh(username):
+#Return Array --> [id_model,model,fuel,insurance,value]  
+    try:
+        veh = []
+        data = dbrequest(f'SELECT Model,Benzina,Assicurazione,Valore FROM vehicles WHERE Owner="{username}"', "fetchall")
+        for i in data:
+            id_model = i[0]
+            model = modelli_auto(i[0])
+            fuel = i[1]
+            insurance = ""
+            if i[2]!=1:
+                insurance = "VEICOLO NON ASSICURATO"
+            value = i[3]/100*40
+
+            veh.append([id_model,model,fuel,insurance,value])
+        return veh
+    except:
+        return 0
 # _______________VERIFICA VALIDITA' ACCOUNT______________
 def verifica_account():
     return True
@@ -2309,7 +2343,33 @@ def mia_fedina(error=""):
         return page_not_found(404)
 
 #---------------------------------------------------------------------------------------------
+@__app__.route('/stats', methods=['GET','POST'])
+def stats():
+    if sez_personaggio:
+        if not session.get('logged_in'):
+            if request.method == 'POST':
+                return login()
+            return home()
+        else:
+            #[SKIN, AGE, PHONENUMBER, PHONECREDIT, MONEY, BANKMONEY]
+            stats = load_stats(session['username'])
+            
+            #[id_model,model,fuel,insurance,value]  
+            veh = load_veh(session['username'])
 
+            page = render_template("sez_pers/stats.html",username=session["username"], stats=stats, veh=veh, len_veh=len(veh))
+
+            global template
+            global credit
+            try:
+                pagina = template % (credit, page)
+                return pagina
+            except:
+                print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
+                return quit()
+    else:
+        return page_not_found(404) 
+#---------------------------------------------------------------------------------------------
 @__app__.route('/mia-cartella', methods=['GET','POST'])
 def mia_cartella(m='null',error=""):
     if sez_personaggio:
