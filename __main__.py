@@ -69,6 +69,19 @@
 #   • Aggiunta la possibiltà di cambiare il personaggio senza logout.
 #   • Modificato il corpo della sezione ringraziamenti.
 #   • Fixato il bug che faceva bloccare l'ucp a tutti a causa del timeout del Mysql.
+
+#-------------------------------------------------------------
+
+# {UCP V1.0} Primo sviluppo 19/04/2021 [Francesco De Rosa (kekko.py)]
+
+#   • Modificata funzione Registra Reato + Metti ricercato [SEZ. POLIZIA]
+#   • Aggiunta funzione Lista Ricercati [SEZ. POLIZIA]
+#   • Aggiunta funzione Rimuovi ricercato [SEZ. POLIZIA] 
+#   • Impostati Log più precisi tramite telegram per polizia.
+#   • Aggiunta foto singola per le skin hd.
+#   • Aggiunta la semplice segnalazione nella fedina. [SEZ. POLIZIA]
+#   • Aggiunta News automatica quando c'è un nuovo ricercato. 
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 ################################################################################################################################
@@ -85,7 +98,7 @@ def credts_spam():
               /|   |---- COFFEE TO CODE ----|   |\\ 
                 \\______________________________/
 
-                          v0.9.9 [BETA]
+                          v1.0.0 [BETA]
     ######################################################
     '''+ Fore.RESET
 
@@ -187,6 +200,8 @@ avviso_comunale_pol =  int(funzionalita.get("POLIZIA",'avviso_comunale'))
 mess_priv_pol = int(funzionalita.get("POLIZIA",'mess_priv'))
 pulizia_fedina = int(funzionalita.get("POLIZIA",'pulizia_fedina'))
 veicoli_seq = int(funzionalita.get("POLIZIA",'veicoli_seq'))
+visualizza_ricercati = int(funzionalita.get("POLIZIA",'visualizza_ricercati'))
+rimuovi_ricercati = int(funzionalita.get("POLIZIA",'rimuovi_ricercati'))
 
 visualizza_cartella = int(funzionalita.get("MEDICI",'visualizza_cartella'))
 agg_referto =  int(funzionalita.get("MEDICI",'agg_referto'))
@@ -207,6 +222,8 @@ rank_avviso_comunale_pol =  int(rank_funzionalita.get("POLIZIA",'avviso_comunale
 rank_mess_priv_pol = int(rank_funzionalita.get("POLIZIA",'mess_priv'))
 rank_pulizia_fedina = int(rank_funzionalita.get("POLIZIA",'pulizia_fedina'))
 rank_veicoli_seq = int(rank_funzionalita.get("POLIZIA",'rank_veicoli_seq'))
+rank_visualizza_ricercati = int(rank_funzionalita.get("POLIZIA",'visualizza_ricercati'))
+rank_rimuovi_ricercati = int(rank_funzionalita.get("POLIZIA",'rimuovi_ricercati'))
 
 rank_visualizza_cartella = int(rank_funzionalita.get("MEDICI",'visualizza_cartella'))
 rank_agg_referto =  int(rank_funzionalita.get("MEDICI",'agg_referto'))
@@ -349,18 +366,49 @@ def nuova_news_text(id_faz,autore,news,fazione):
     except:
         return 0
 #_____________________║REATI SYSTEM║­­____________________
-def nuovo_reato(user,reato,multa,prigione,poliziotto):
+def nuovo_reato(user,reato,multa,prigione,ricercato,poliziotto):
     try:
         data_ora = time.ctime()
         dbrequest(f'INSERT INTO reati (user,reato,multa,prigione,poliziotto,data_ora) VALUES ("{user}","{reato}","{multa}","{prigione}","{poliziotto}","{data_ora}")')
+        
         if bool(prigione):
             data = dbrequest(query23+f'"{user}"', "fetchone")
             dbrequest(f'UPDATE personaggi SET Arresti_ucp={int(data[0])+1} WHERE nome="{user}"')
-            text_news = f"{user} è stato Arrestato da {poliziotto}, dopo aver pagato una multa di {multa}$, I reati sono: {reato}"
+            #text_news = f"{user} è stato Arrestato da {poliziotto}, dopo aver pagato una multa di {multa}$, I reati sono: {reato}"
             save_log("pd",poliziotto,"Arresto di "+user,reato)
             #nuova_news_text(id_pula,poliziotto,text_news,"SF-Police Department")
             return 1
-        save_log("pd",poliziotto,f"Multa a {user} di {multa}$",reato)
+
+        if bool(ricercato):
+            data = dbrequest(f'SELECT * FROM ricercati WHERE ricercato="{user}"', "fetchone")
+
+            try:
+                try_v=data[1]
+                new=0
+            except:
+                new=1
+
+            if bool(new):
+                if not sms_send(911,user,f"Sig. {user}, è pregato/a di raggiungerci in questura e costituirsi ammettendo le sue accuse.\nLe accuse sono:\n{reato}."):
+                    return 0
+                dbrequest(f'INSERT INTO ricercati (poliziotto,ricercato,motivazione,data_ora) VALUES ("{poliziotto}","{user}","{reato}","{data_ora}")')
+                save_log("pd",poliziotto,"Ha messo ricercato "+user,reato)
+                text_news = f"{user} è ricercato/a in tutta la contea di San Andreas, chiunque lo/a conosca o lo/a veda, segnali la sua posizione al Dipartimento di Polizia"
+                nuova_news_text(id_pula,poliziotto,text_news,"SF-Police Department")
+                return 1
+            else:
+                if not sms_send(911,user,f"Sig. {user}, Sono stati aggiunti altri capi d'accusa sul suo conto.\nLe accuse sono:\n{reato}."):
+                    return 0
+                motivazione = f"{data[3]} -|- {reato}"
+                data_ora = f"{data[4]} -|- {data_ora}" 
+                dbrequest(f'UPDATE ricercati SET motivazione="{motivazione}",data_ora="{data_ora}" WHERE ricercato="{user}"')
+                save_log("pd",poliziotto,"Ha aggiunto nuovi capi d'accusa su "+user,reato)
+                return 1
+
+        if multa>0:
+            save_log("pd",poliziotto,f"Multa a {user} di {multa}$",reato)
+        else:
+            save_log("pd",poliziotto,f"Ha segnalato {user}",reato)
         return 1
     except:
         return 0
@@ -370,6 +418,15 @@ def pulisci_fedina(poliziotto,user,motivo=""):
         dbrequest(f'DELETE FROM reati WHERE user="{user}"')
         data_ora = time.ctime()
         save_log("pd",poliziotto,"Pulizia della fedina di "+ user ,motivo)
+        return 1
+    except:  
+        return 0 
+#--------
+def rimuovi_ricercato(poliziotto,user,motivo):
+    try:
+        dbrequest(f'DELETE FROM ricercati WHERE ricercato="{user}"')
+        data_ora = time.ctime()
+        save_log("pd",poliziotto,"Rimosso stato ricercato a "+ user ,motivo)
         return 1
     except:  
         return 0 
@@ -388,10 +445,9 @@ def visualizza_fedina(user):
             classe = "alert-primary"
             if multa > 0:    
                 cont_multa = f"- Ha Pagato una multa di {multa}"
-                if multa >= 2000:
-                    classe = "alert-warning"
+                classe = "alert-warning"
             else:
-                cont_multa = ""
+                cont_multa = "SEMPLICE SEGNALAZIONE"
 
             if prigione == 1:
                 classe = "alert-danger"
@@ -759,6 +815,15 @@ def visualizza_sequestri():
         return veicoli   
     except:
         return 0
+
+def visualizza_ric():
+    try:
+        data = dbrequest("SELECT poliziotto,ricercato,motivazione,data_ora FROM ricercati", "fetchall")
+        #[Poliziotto, Ricercato, Motivazione, Data_Ora]
+        return data
+    except:
+        return 0
+            
 
 #_____________________║CARTELLA CLINICA SYSTEM║­­____________________
 def nuovo_rapporto_clinico(user,diagnosi,terapia,grado,medico):
@@ -1344,14 +1409,24 @@ def page_reg_reato(m='null',error=""):
                         reato = request.form['reato']
                         multa = int(request.form['multa'])
 
+                        prigione = ricercato = 0
+
+                        if request.form.get('ricercato'):
+                            ricercato=1
+
                         if request.form.get('prigione'):
                             prigione=1
-                        else:
-                            prigione=0
+
+                        if ricercato and prigione:
+                            error = "Non Puoi impostare ricercato un soggetto già arrestato"
+                            return page_reg_reato("get",error)
+                        if ricercato and multa>0:
+                            error = "Non Puoi impostare ricercato un soggetto già multato"
+                            return page_reg_reato("get",error)
 
                         if controllo_input(sospetto) and controllo_input(reato):
                             error=""
-                            if not nuovo_reato(sospetto, reato, multa, prigione, session['username']):
+                            if not nuovo_reato(sospetto, reato, multa, prigione, ricercato, session['username']):
                                 error="Errore Registrazione"
                             else:
                                 error="Registrazione Avvenuta con successo"
@@ -1519,6 +1594,7 @@ def page_send_sms_pd(m='null',error=""):
                             else:
                                 save_log("pd",session["username"],f"Ha inviato un messaggio a {user}",messaggio)
                                 error="Messaggio spedito con successo"
+                                
 
                         else:
                             error="Hai inserito dei Caratteri non consentiti"    
@@ -1674,7 +1750,7 @@ def page_pulisci_fedina(m='null',error=""):
                         if controllo_input(user) and controllo_input(motivo):
                             error=""
                             if not pulisci_fedina(session['username'],user,motivo):
-                                error="Errore Invio Messaggio"
+                                error="Errore pulizia fedina"
                             else:
                                 error="Fedina Pulita con successo"
 
@@ -1686,7 +1762,55 @@ def page_pulisci_fedina(m='null',error=""):
             else:
                  return page_not_found(404)
     else:
-        return page_not_found(404)     
+        return page_not_found(404)
+
+@__app__.route('/rimuovi-ricercato', methods=['GET','POST'])
+def page_rimuovi_ricercato(m='null',error=""):
+    try:
+        data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
+        rank=int(data[0])
+    except:
+        return home()
+    if sez_fazione and rimuovi_ricercati and rank <= rank_rimuovi_ricercati:
+        if not session.get('logged_in'):
+            if request.method == 'POST':
+                return login()
+            return home()
+        else:
+            data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
+            if int(data[0]) == int(id_pula):
+                if request.method == 'GET' or m=='get':
+                    page = render_template("pd/rimuovi_ricercati.html", error=error)
+
+                    global template
+                    global credit
+                    try:
+                        pagina = template % (credit, page)
+                        return pagina
+                    except:
+                        print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
+                        return quit()
+                else:
+                    try:
+                        user = request.form['user']
+                        motivo = request.form['motivo']
+
+                        if controllo_input(user) and controllo_input(motivo):
+                            error=""
+                            if rimuovi_ricercato(session['username'],user,motivo):
+                                error="Rimosso stato ricercato con successo"
+                            else:
+                                error="Si è Verificato un Problema."
+
+                        else:
+                            error="Hai inserito dei Caratteri non consentiti"    
+                    except:
+                        error = "Compila tutti i Campi!"
+                    return page_rimuovi_ricercato("get",error)
+            else:
+                 return page_not_found(404)
+    else:
+        return page_not_found(404)
 
 @__app__.route('/veh-seq', methods=['GET','POST'])
 def veh_seq(m='null',error=""):
@@ -1715,6 +1839,49 @@ def veh_seq(m='null',error=""):
                         error=""
 
                     page = render_template("pd/veh_seq.html", error=error, veicoli=veicoli, len_veicoli=len(veicoli))
+
+                    global template
+                    global credit
+                    try:
+                        pagina = template % (credit, page)
+                        return pagina
+                    except:
+                        print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
+                        return quit()
+            else:
+                 return page_not_found(404)
+    else:
+        return page_not_found(404)
+
+
+@__app__.route('/ricercati', methods=['GET','POST'])
+def ricercati(m='null',error=""):
+    try:
+        data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
+        rank=int(data[0])
+    except:
+        return home()
+    if sez_fazione and visualizza_ricercati and rank <= rank_visualizza_ricercati:
+        if not session.get('logged_in'):
+            if request.method == 'POST':
+                return login()
+            return home()
+        else:
+            data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
+            if int(data[0]) == int(id_pula):
+                if request.method == 'GET' or m=='get':
+
+                    ricercati = visualizza_ric()
+
+                    if ricercati==0: 
+                        error = "Errore Lettura Ricercati"
+                        ricercati=[]
+                    elif len(ricercati) == 0:
+                        error = "Nessun Ricercato"
+                    else:
+                        error=""
+                    
+                    page = render_template("pd/visualizza_ricercati.html", error=error, ricercati=ricercati, len_ricercati=len(ricercati))
 
                     global template
                     global credit
@@ -2116,7 +2283,7 @@ def fazione_null():
 
 # PAGINA FAZIONE POLIZIA GET
 def fazione_polizia_get():
-    global registra_reato,visualizza_fedpen,visualizza_trans,blocca_conto,verifica_arruolamento,avviso_comunale_pol,mess_priv_pol,pulizia_fedina,veicoli_seq
+    global registra_reato,visualizza_fedpen,visualizza_trans,blocca_conto,verifica_arruolamento,avviso_comunale_pol,mess_priv_pol,pulizia_fedina,veicoli_seq,visualizza_ricercati,rimuovi_ricercati
 
     data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
     rank=int(data[0])
@@ -2130,6 +2297,8 @@ def fazione_polizia_get():
     loc_mess_priv_pol = int(funzionalita.get("POLIZIA",'mess_priv'))
     loc_pulizia_fedina = int(funzionalita.get("POLIZIA",'pulizia_fedina'))
     loc_veicoli_seq = int(funzionalita.get("POLIZIA",'veicoli_seq'))
+    loc_visualizza_ricercati = int(funzionalita.get("POLIZIA",'visualizza_ricercati'))
+    loc_rimuovi_ricercati = int(funzionalita.get("POLIZIA",'rimuovi_ricercati'))
 
     if loc_registra_reato:
         if not (rank <= rank_registra_reato):
@@ -2184,8 +2353,20 @@ def fazione_polizia_get():
             veicoli_seq=0
         else:
             veicoli_seq=1
+    
+    if loc_visualizza_ricercati:
+        if not (rank <= rank_visualizza_ricercati): 
+            visualizza_ricercati=0
+        else:
+            visualizza_ricercati=1
+    
+    if loc_rimuovi_ricercati:
+        if not (rank <= rank_rimuovi_ricercati): 
+            rimuovi_ricercati=0
+        else:
+            rimuovi_ricercati=1
 
-    page = render_template("faz_pula.html", registra_reato=registra_reato, visualizza_fedina=visualizza_fedpen, visualizza_trans=visualizza_trans, blocca_conto=blocca_conto, verifica_arruolamento=verifica_arruolamento, avviso_comunale=avviso_comunale_pol, mess_priv=mess_priv_pol, pulizia_fedina=pulizia_fedina, veicoli_seq=veicoli_seq)
+    page = render_template("faz_pula.html", registra_reato=registra_reato, visualizza_fedina=visualizza_fedpen, visualizza_trans=visualizza_trans, blocca_conto=blocca_conto, verifica_arruolamento=verifica_arruolamento, avviso_comunale=avviso_comunale_pol, mess_priv=mess_priv_pol, pulizia_fedina=pulizia_fedina, veicoli_seq=veicoli_seq, rimuovi_ricercati=rimuovi_ricercati, visualizza_ricercati=visualizza_ricercati)
     global template
     global credit
     try:
