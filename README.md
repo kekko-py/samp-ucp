@@ -40,7 +40,7 @@ FUNZIONALITÀ FAZIONI:
         • Fixato il bug che faceva bloccare l'ucp a tutti a causa del timeout del Mysql.
 -------------------------------------------------------------
 
- {UCP V1.0} Primo sviluppo 19/04/2021 [Francesco De Rosa (kekko.py)]
+ {UCP V1.0.0} Primo sviluppo 19/04/2021 [Francesco De Rosa (kekko.py)]
  
    	• Modificata funzione Registra Reato + Metti ricercato [SEZ. POLIZIA]
    	• Aggiunta funzione Lista Ricercati [SEZ. POLIZIA]                   
