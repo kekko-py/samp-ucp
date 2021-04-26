@@ -20,7 +20,7 @@ FUNZIONALITÀ FAZIONI:
 		•Verifica arruolamento 
 		•Pulisci fedina
 		•Veicoli sequestrati 
-		MEDICI
+	MEDICI
 		•Aggiungi Referto clinico
 		•Visualizza referti
 		•Messaggio privato
