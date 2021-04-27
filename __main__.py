@@ -72,23 +72,37 @@
 
 #-------------------------------------------------------------
 
-# {UCP V1.0} Primo sviluppo 19/04/2021 [Francesco De Rosa (kekko.py)]
+# {UCP V1.0.0} Primo sviluppo 19/04/2021 [Francesco De Rosa (kekko.py)]
 
 #   • Modificata funzione Registra Reato + Metti ricercato [SEZ. POLIZIA]
-#   • Aggiunta funzione Lista Ricercati [SEZ. POLIZIA]
-#   • Aggiunta funzione Rimuovi ricercato [SEZ. POLIZIA] 
-#   • Impostati Log più precisi tramite telegram per polizia.
-#   • Aggiunta foto singola per le skin hd.
-#   • Aggiunta la semplice segnalazione nella fedina. [SEZ. POLIZIA]
-#   • Aggiunta News automatica quando c'è un nuovo ricercato. 
+#   • Aggiunta funzione Lista Ricercati [SEZ. POLIZIA]                   
+#   • Aggiunta funzione Rimuovi ricercato [SEZ. POLIZIA]                 
+#   • Impostati Log più precisi tramite telegram per polizia.            
+#   • Aggiunta foto singola per le skin hd.                              
+#   • Aggiunta la semplice segnalazione nella fedina. [SEZ. POLIZIA]     
+#   • Aggiunta News automatica quando c'è un nuovo ricercato.            
+
+#-------------------------------------------------------------
+
+# {UCP V1.1.0} Primo sviluppo 26/04/2021 [Francesco De Rosa (kekko.py)]
+
+#   • Fixate lettere RI da RIMUOVI RICERCATO [SEZ. POLIZIA]
+#   • Cambiato Credito: in Credito telefonico: [SEZ. PERSONAGGIO]
+#   • Unica variabile per cambiare la versione della Web APP
+#   • Aggiunto sistema LOG, text file divisi in date
+#   • Cambiato sis Mess privato, da nome_destinatario a Numero_destinatario
+#   • Modificata Lista STAFF
+#   • Aggiunta funzione nuova formattazione orario
+#   • Modificato il template della sezione regolamenti      
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 ################################################################################################################################
+VERSIONE_APP = "1.1.0"
 
 #_______________CREDITI__________________
 def credts_spam():
-    return Fore.LIGHTMAGENTA_EX +'''
+    return Fore.LIGHTMAGENTA_EX +f'''
     ###################################################### 
                        ROLEPLAY WEB PANEL
                  ______________________________
@@ -98,7 +112,7 @@ def credts_spam():
               /|   |---- COFFEE TO CODE ----|   |\\ 
                 \\______________________________/
 
-                          v1.0.0 [BETA]
+                          v{VERSIONE_APP} [BETA]
     ######################################################
     '''+ Fore.RESET
 
@@ -240,6 +254,11 @@ credit = '<div class="small text-light">POWERED BY:</div>@kekko.py</div>'
 #_____________VARIABILI GLOBALI FAZIONE____________
 max_arrest = int(config.get("POLIZIA", 'max_arrest'))
 
+# _______________║FUNZIONE DATA-ORA║_______________
+def get_data_ora():
+    named_tuple = time.localtime()
+    return time.strftime("%m/%d/%Y, %H:%M", named_tuple)
+
 #_____________________║QUERY MYSQL ESECUTORE║­­____________________
 def dbrequest(query,fetch="none"):
     global connection
@@ -264,15 +283,31 @@ def controllo_input(string):
     
     else: return 1
 
-#_____________________║SISTEMA SALVATAGGIO LOG║­­____________________
-#BOT KEYS FOR LOGS
+logs_chat_key = -381936713
 pd_chat_key = -520833055
 ems_chat_key = -522143537
 sfnn_chat_key = -487923137
 admin_chat_key = -1001201314801
 bot = telepot.Bot('1698925075:AAHNc8ITikXpcpQUi9N-VtdGlyV_Ow39oXY')
-def save_log(fazione,name,azione,motivazione):
-    data_ora = time.ctime()
+#_____________________║SISTEMA LOG GENERALE║­­____________________
+def text_log(corpo):
+    named_tuple = time.localtime() # get struct_time
+    time_string = time.strftime("%m-%d-%Y", named_tuple)
+    with open(f"LOGS/{time_string}.log",'a') as file:
+        username=""
+        if session.get('logged_in'):
+            username=f'| {session["account"]} | {session["username"]}'
+        ip = request.remote_addr
+        data_ora = time.strftime("%m/%d/%Y, %H:%M:%S", named_tuple)
+        contenuto = f'{ip} {username} | {data_ora} | --> {corpo}'
+        file.write(f"{contenuto}\n")
+        #time.sleep(0.5)
+        #bot.sendMessage(logs_chat_key, contenuto)
+
+#_____________________║SISTEMA SALVATAGGIO LOG FAZIONI║­­____________________
+#BOT KEYS FOR LOGS
+def save_log_tg(fazione,name,azione,motivazione):
+    data_ora = get_data_ora()
     if fazione=="pd":
         dbrequest(f'INSERT INTO logs_polizia (name,azione,motivazione,data_ora) VALUES ("{name}","{azione}","{motivazione}","{data_ora}")')
         bot.sendMessage(pd_chat_key, f'<b>AGENTE:</b>\n<code>{name}</code>\n<b>AZIONE:</b>\n<code>{azione}</code>\n<b>MOTIVAZIONE:</b>\n<code>{motivazione}</code>', parse_mode= 'html')
@@ -288,6 +323,7 @@ def save_log(fazione,name,azione,motivazione):
 #_____________________║GENERATORE E CONTROLLO IBAN║­­____________________
 def generatore_iban():
     i = 1
+    text_log("Ha generato un'iban")
     while i == 1:
         prefisso = "555"
         sufisso = str(random.randint(100, 999))
@@ -312,24 +348,29 @@ def controllo_iban():
 #_____________________║BG SYSTEM║­­____________________  
 def add_porz_bg(user,contenuto):
     try:
-        data_ora = time.ctime()
+        data_ora = get_data_ora()
         dbrequest(f'INSERT INTO bg (user,contenuto,data_ora) VALUES ("{user}","{contenuto}","{data_ora}")')
+        text_log("Ha aggiunto una porzione di bg")
         return 1
     except:
         return 0
 #----------
 def get_bg(user):
     try:
-        
         data = dbrequest('SELECT contenuto,data_ora FROM bg WHERE user="{user}" ORDER BY id DESC', "fetchall")
+        text_log("Ha richiesto una bg")
         return data
     except:
         return 0
 #_____________________║SMS SYSTEM║­­____________________   
 def sms_send(n_mittente,n_destinatario,contenuto):
     try:
-        data_ora = time.ctime()
+        n_destinatario=int(n_destinatario)
+        num = dbrequest(f'SELECT PhoneNumber FROM personaggi WHERE PhoneNumber={n_destinatario}', "fetchone")
+        if(num[0]!=n_destinatario): return 0
+        data_ora = get_data_ora()
         dbrequest(f'INSERT INTO message (n_mittente,n_destinatario,contenuto,data_ora) VALUES ("{n_mittente}","{n_destinatario}","{contenuto}","{data_ora}")')
+        text_log(f"Ha inviato un sms a {n_destinatario}")
         return 1
     except:
         return 0
@@ -337,7 +378,8 @@ def sms_send(n_mittente,n_destinatario,contenuto):
 def visualizza_sms(user):
     try:
         sms = []
-        data = dbrequest(f'SELECT * FROM message WHERE n_destinatario="{user}" ORDER BY id DESC', "fetchall") 
+        num = dbrequest(f'SELECT PhoneNumber FROM personaggi WHERE nome="{user}"', "fetchone")
+        data = dbrequest(f'SELECT * FROM message WHERE n_destinatario="{num[0]}" ORDER BY id DESC', "fetchall") 
         for i in data:
             n_mittente = i[1]
             n_destinatario = i[2]
@@ -351,7 +393,7 @@ def visualizza_sms(user):
             elif n_mittente=="333":
                 n_mittente="San Fierro News Network [333]"
 
-            sms.append([n_mittente,n_destinatario,contenuto,data_ora])           
+            sms.append([n_mittente,n_destinatario,contenuto,data_ora])        
         return sms
     except:
         return 0
@@ -362,20 +404,21 @@ def nuova_news_text(id_faz,autore,news,fazione):
     try:
         tempo_attuale = time.ctime()
         dbrequest(f'INSERT INTO news (fazid, autore, text_news, data_ora, fazione, immagine, prezzo, numero) VALUES ({id_faz},"{autore}","{news}","{tempo_attuale}","{fazione}","N/A",0,0)')
+        text_log(f"Ha fatto una nuova news, {fazione}, {text_news}")
         return 1
     except:
         return 0
 #_____________________║REATI SYSTEM║­­____________________
 def nuovo_reato(user,reato,multa,prigione,ricercato,poliziotto):
     try:
-        data_ora = time.ctime()
+        data_ora = get_data_ora()
         dbrequest(f'INSERT INTO reati (user,reato,multa,prigione,poliziotto,data_ora) VALUES ("{user}","{reato}","{multa}","{prigione}","{poliziotto}","{data_ora}")')
         
         if bool(prigione):
             data = dbrequest(query23+f'"{user}"', "fetchone")
             dbrequest(f'UPDATE personaggi SET Arresti_ucp={int(data[0])+1} WHERE nome="{user}"')
             #text_news = f"{user} è stato Arrestato da {poliziotto}, dopo aver pagato una multa di {multa}$, I reati sono: {reato}"
-            save_log("pd",poliziotto,"Arresto di "+user,reato)
+            save_log_tg("pd",poliziotto,"Arresto di "+user,reato)
             #nuova_news_text(id_pula,poliziotto,text_news,"SF-Police Department")
             return 1
 
@@ -392,7 +435,7 @@ def nuovo_reato(user,reato,multa,prigione,ricercato,poliziotto):
                 if not sms_send(911,user,f"Sig. {user}, è pregato/a di raggiungerci in questura e costituirsi ammettendo le sue accuse.\nLe accuse sono:\n{reato}."):
                     return 0
                 dbrequest(f'INSERT INTO ricercati (poliziotto,ricercato,motivazione,data_ora) VALUES ("{poliziotto}","{user}","{reato}","{data_ora}")')
-                save_log("pd",poliziotto,"Ha messo ricercato "+user,reato)
+                save_log_tg("pd",poliziotto,"Ha messo ricercato "+user,reato)
                 text_news = f"{user} è ricercato/a in tutta la contea di San Andreas, chiunque lo/a conosca o lo/a veda, segnali la sua posizione al Dipartimento di Polizia"
                 nuova_news_text(id_pula,poliziotto,text_news,"SF-Police Department")
                 return 1
@@ -402,13 +445,15 @@ def nuovo_reato(user,reato,multa,prigione,ricercato,poliziotto):
                 motivazione = f"{data[3]} -|- {reato}"
                 data_ora = f"{data[4]} -|- {data_ora}" 
                 dbrequest(f'UPDATE ricercati SET motivazione="{motivazione}",data_ora="{data_ora}" WHERE ricercato="{user}"')
-                save_log("pd",poliziotto,"Ha aggiunto nuovi capi d'accusa su "+user,reato)
+                save_log_tg("pd",poliziotto,"Ha aggiunto nuovi capi d'accusa su "+user,reato)
                 return 1
 
         if multa>0:
-            save_log("pd",poliziotto,f"Multa a {user} di {multa}$",reato)
+            save_log_tg("pd",poliziotto,f"Multa a {user} di {multa}$",reato)
         else:
-            save_log("pd",poliziotto,f"Ha segnalato {user}",reato)
+            save_log_tg("pd",poliziotto,f"Ha segnalato {user}",reato)
+        
+        text_log(f"Ha aggiunto un reato, {user}, Motivazione={reato}, Multa={str(multa)}, Prigione={str(prigione)}, Ricercato={str(ricercato)}")
         return 1
     except:
         return 0
@@ -416,8 +461,9 @@ def nuovo_reato(user,reato,multa,prigione,ricercato,poliziotto):
 def pulisci_fedina(poliziotto,user,motivo=""):
     try:
         dbrequest(f'DELETE FROM reati WHERE user="{user}"')
-        data_ora = time.ctime()
-        save_log("pd",poliziotto,"Pulizia della fedina di "+ user ,motivo)
+        data_ora = get_data_ora()
+        save_log_tg("pd",poliziotto,"Pulizia della fedina di "+ user ,motivo)
+        text_log(f"Ha pulito la fedina di {user}, motivazione= {motivo}")
         return 1
     except:  
         return 0 
@@ -425,8 +471,9 @@ def pulisci_fedina(poliziotto,user,motivo=""):
 def rimuovi_ricercato(poliziotto,user,motivo):
     try:
         dbrequest(f'DELETE FROM ricercati WHERE ricercato="{user}"')
-        data_ora = time.ctime()
-        save_log("pd",poliziotto,"Rimosso stato ricercato a "+ user ,motivo)
+        data_ora = get_data_ora()
+        save_log_tg("pd",poliziotto,"Rimosso stato ricercato a "+ user ,motivo)
+        text_log(f"Ha rimosso ricercato {user}, motivazione= {motivo}")
         return 1
     except:  
         return 0 
@@ -537,6 +584,7 @@ def transazioni_citta(user=" "):
 def validata_arruolamento(user):
     try:
         data = dbrequest(query23+f'"{user}"', "fetchone")
+        text_log(f"Ha controllato l'arruolamento di {user}")
         if data[0] > max_arrest:
             return "no"
         else:
@@ -549,7 +597,8 @@ def blocca_conto_funct(poliziotto,user,motivazione):
         data = dbrequest(query24+f'"{user}"', "fetchone")
         if data[0] == 1:
             dbrequest(query25+f'"{user}"')
-            save_log("pd",poliziotto,"Bloccato il conto di "+user,motivazione)
+            save_log_tg("pd",poliziotto,"Bloccato il conto di "+user,motivazione)
+            text_log(f"ha bloccato il conto di {user} motivazione: {motivazione}")
             return "si"
         else:
             return "gia_bloccato"
@@ -562,7 +611,8 @@ def sblocca_conto(poliziotto,user,motivazione):
         data = dbrequest(query24+f'"{user}"', "fetchone")
         if data[0] == 0:
             dbrequest(query26+f'"{user}"')
-            save_log("pd",poliziotto,"Sbloccato il conto di "+user,motivazione)
+            save_log_tg("pd",poliziotto,"Sbloccato il conto di "+user,motivazione)
+            text_log(f"Ha sbloccato il conto di {user}, motivazione: {motivazione}")
             return "si"
         else:
             return "non_bloccato"
@@ -828,9 +878,10 @@ def visualizza_ric():
 #_____________________║CARTELLA CLINICA SYSTEM║­­____________________
 def nuovo_rapporto_clinico(user,diagnosi,terapia,grado,medico):
     try:
-        data_ora = time.ctime()
+        data_ora = get_data_ora()
         dbrequest(f'INSERT INTO cartella_clinica (user,diagnosi,terapia,grado,medico,data_ora) VALUES ("{user}","{diagnosi}","{terapia}","{grado}","{medico}","{data_ora}")')
-        save_log("ems",medico,f"Ha emesso un referto a {user}",diagnosi)
+        save_log_tg("ems",medico,f"Ha emesso un referto a {user}",diagnosi)
+        text_log(f"Ha emesso un nuovo rapporto clinico, Paziente: {user} Diagnosi: {diagnosi}")
         return 1
     except:
         return 0
@@ -896,6 +947,10 @@ def load_veh(username):
         return veh
     except:
         return 0
+
+#--------------- LISTA FUNZIONI ED IMPORT ---------------
+import admin
+
 # _______________VERIFICA VALIDITA' ACCOUNT______________
 def verifica_account():
     return True
@@ -960,6 +1015,7 @@ def start_web_app():
 #________________________________║GESTORE PAGINA HOME║­­____________________________
 @__app__.route('/',  methods=['GET','POST'])
 def home(error=" "):
+    text_log(f"SI È CONNESSO ALLLA WEB APP!")
     if __state__ == 1:
         if not session.get('logged_in'):
             if request.method == 'POST':
@@ -995,6 +1051,7 @@ def home(error=" "):
 #________________________________║GESTORE PAGINA ER404║­­____________________________
 @__app__.errorhandler(404)
 def page_not_found(e):
+    text_log(f"È ENTRATO NELLA PAGINA 404")
     page = render_template("404.html")
     global template
     global credit
@@ -1010,12 +1067,13 @@ def page_not_found(e):
 #________________________________║GESTORE PAGINA LOGIN║­­____________________________
 @__app__.route('/login', methods=['GET'])
 def login_get(error=" "):
+    text_log(f"È entrato nella pagina LOGIN")
     if __state__ == 1:
         if not session.get('logged_in'):
-            login = render_template("login.html")
+            login = render_template("login.html", versione=VERSIONE_APP)
             login = login % (error)
             global template
-            template = render_template("template_panel.html", sez_reg=sez_reg, sez_vip=sez_vip, sez_news=sez_news, sez_maze=sez_maze, sez_digit=sez_digit, sez_fazione=sez_fazione, sez_concessionaria=sez_concessionaria, sez_personaggio=sez_personaggio, sez_ringraziamenti=sez_ringraziamenti)
+            template = render_template("template_panel.html", versione=VERSIONE_APP, sez_reg=sez_reg, sez_vip=sez_vip, sez_news=sez_news, sez_maze=sez_maze, sez_digit=sez_digit, sez_fazione=sez_fazione, sez_concessionaria=sez_concessionaria, sez_personaggio=sez_personaggio, sez_ringraziamenti=sez_ringraziamenti)
             return login
         else:
             if sez_reg:
@@ -1043,6 +1101,7 @@ def login_get(error=" "):
 
 @__app__.route('/login', methods=['POST'])
 def login():
+    text_log(f"Ha eseguito un POST nella pagina LOGIN")
     #session['logged_in'] = True
     #session['username'] = "Ciro_Esposito"
     #return home()
@@ -1077,7 +1136,7 @@ def login():
 def scelta_pg():
     if __state__ == 1:
         if request.method == 'GET':
-
+            text_log(f"È entrato nella pagina SCELTA PG")
             data = dbrequest(f'SELECT PG1,PG2,PG3 FROM accounts WHERE nome="{session["account"]}"', "fetchone")
             try:
                 session['pg'] = ["","",""]
@@ -1087,13 +1146,14 @@ def scelta_pg():
             except:
                 return login_get("Devi prima eseguire l'autenticazione!")
 
-            return render_template("scelta_pg.html",pg=session['pg'])
+            return render_template("scelta_pg.html", versione=VERSIONE_APP ,pg=session['pg'])
         else:
             pg = request.form['pg']
 
             if (pg==session['pg'][0] or pg==session['pg'][1] or pg==session['pg'][2]) and pg!="(nuovo personaggio)":
                 session['username'] = pg
                 session['logged_in'] = True
+                text_log(f"SCELTA PG POST")
                 return controllo_iban()
             else: 
                 return login_get("EH VOLEVIIII")
@@ -1110,6 +1170,7 @@ def reg():
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina REGOLAMENTI")
             reg_page = render_template("sez_reg.html")
             global template
             global credit
@@ -1131,6 +1192,7 @@ def vip():
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina REGOLAMENTI")
             paypal = config.get("ACCOUNT", 'email_paypal')
             bronze = config.get("VIP", 'bronze')
             silver = config.get("VIP", 'silver')
@@ -1171,6 +1233,7 @@ def news():
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina NEWS")
             notizie=[]
             data = dbrequest('SELECT * FROM news ORDER BY id DESC', "fetchall")
             for row in data:
@@ -1302,6 +1365,7 @@ def banca_get(error=""):
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina MAZE")
             data = dbrequest(query19+f'"{session["username"]}"', "fetchone")
             iban = data[0]
             saldo_banca = str(data[1])
@@ -1333,6 +1397,7 @@ def digit_coin_get(error=""):
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina DIGITCOIN")
             data = dbrequest(query19+f'"{session["username"]}"', "fetchone")
             iban = data[0]
             saldo_digit = str(data[2])
@@ -1363,6 +1428,7 @@ def ringraziamenti():
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina RINGRAZIAMENTI")
             reg_page = render_template("sez_ringraziamenti.html")
             global template
             global credit
@@ -1390,6 +1456,7 @@ def page_reg_reato(m='null',error=""):
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina REG-REATO")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
                 if request.method == 'GET' or m=='get':
@@ -1456,6 +1523,7 @@ def page_fedina(m='null',error="",utente_cercato=""):
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina FEDINA-PD")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
                 if request.method == 'GET' or m=='get':
@@ -1512,6 +1580,7 @@ def page_trans(m='null',error="",utente_cercato=" "):
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina TRANSAZIONI-PD")
             data = dbrequest(query21+f'"{session["username"]}"',"fetchone")
             if int(data[0]) == int(id_pula):
                 if request.method == 'GET' or m=='get':
@@ -1569,6 +1638,7 @@ def page_send_sms_pd(m='null',error=""):
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina SEND-SMS-PD")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
                 if request.method == 'GET' or m=='get':
@@ -1592,7 +1662,7 @@ def page_send_sms_pd(m='null',error=""):
                             if not sms_send(911,user,messaggio):
                                 error="Errore Invio Messaggio"
                             else:
-                                save_log("pd",session["username"],f"Ha inviato un messaggio a {user}",messaggio)
+                                save_log_tg("pd",session["username"],f"Ha inviato un messaggio a {user}",messaggio)
                                 error="Messaggio spedito con successo"
                                 
 
@@ -1619,6 +1689,7 @@ def page_avviso_pd(m='null',error=""):
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina AVVISO-PD")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
                 if request.method == 'GET' or m=='get':
@@ -1641,7 +1712,7 @@ def page_avviso_pd(m='null',error=""):
                             if not nuova_news_text(id_pula,session["username"],messaggio, "Police Department"):
                                 error="Errore Invio Messaggio"
                             else:
-                                save_log("pd",session["username"],f"Ha aggiunto una news",messaggio)
+                                save_log_tg("pd",session["username"],f"Ha aggiunto una news",messaggio)
                                 error="Messaggio spedito con successo"
 
                         else:
@@ -1669,6 +1740,7 @@ def page_ver_arruolamento(m='null',error="",utente_cercato=""):
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina VER-ARRUOLAMENTO-PD")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
                 if request.method == 'GET' or m=='get':
@@ -1729,6 +1801,7 @@ def page_pulisci_fedina(m='null',error=""):
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina PULISCI-FEDINA-PD")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
                 if request.method == 'GET' or m=='get':
@@ -1777,6 +1850,7 @@ def page_rimuovi_ricercato(m='null',error=""):
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina RIMUOVI-RICERCATO-PD")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
                 if request.method == 'GET' or m=='get':
@@ -1825,6 +1899,7 @@ def veh_seq(m='null',error=""):
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina VEICOLI-SEQ-PD")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
                 if request.method == 'GET' or m=='get':
@@ -1867,6 +1942,7 @@ def ricercati(m='null',error=""):
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina RICERCATI-PD")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
                 if request.method == 'GET' or m=='get':
@@ -1912,6 +1988,7 @@ def page_agg_referto(m='null',error=""):
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina NUOVO-REFERTO-EMS")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_ems):
                 if request.method == 'GET' or m=='get':
@@ -1962,6 +2039,7 @@ def page_cartella_clinica(m='null',error="",utente_cercato=""):
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina CARTELLA-CLINICA-EMS")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_ems):
                 if request.method == 'GET' or m=='get':
@@ -2016,6 +2094,7 @@ def page_avviso_ems(m='null',error=""):
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina AGG-AVVISO-EMS")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_ems):
                 if request.method == 'GET' or m=='get':
@@ -2038,7 +2117,7 @@ def page_avviso_ems(m='null',error=""):
                             if not nuova_news_text(id_ems,session["username"],messaggio, "EMS Departement"):
                                 error="Errore Invio Messaggio"
                             else:
-                                save_log("ems",session["username"],f"Ha aggiunto una news",messaggio)
+                                save_log_tg("ems",session["username"],f"Ha aggiunto una news",messaggio)
                                 error="Messaggio spedito con successo"
 
                         else:
@@ -2064,6 +2143,7 @@ def page_send_sms_ems(m='null',error=""):
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina SEND-SMS-EMS")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_ems):
                 if request.method == 'GET' or m=='get':
@@ -2087,7 +2167,7 @@ def page_send_sms_ems(m='null',error=""):
                             if not sms_send(118,user,messaggio):
                                 error="Errore Invio Messaggio"
                             else:
-                                save_log("ems",session["username"],f"Ha inviato un messaggio a {user}",messaggio)
+                                save_log_tg("ems",session["username"],f"Ha inviato un messaggio a {user}",messaggio)
                                 error="Messaggio spedito con successo"
 
                         else:
@@ -2116,6 +2196,7 @@ def page_send_sms_sfnn(m='null',error=""):
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina SEND-SMS-SFNN")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_sfnn):
                 if request.method == 'GET' or m=='get':
@@ -2139,7 +2220,7 @@ def page_send_sms_sfnn(m='null',error=""):
                             if not sms_send(333,user,messaggio):
                                 error="Errore Invio Messaggio"
                             else:
-                                save_log("sfnn",session["username"],f"Ha inviato un messaggio a {user}",messaggio)
+                                save_log_tg("sfnn",session["username"],f"Ha inviato un messaggio a {user}",messaggio)
                                 error="Messaggio spedito con successo"
 
                         else:
@@ -2165,6 +2246,7 @@ def page_avviso_sfnn(m='null',error=""):
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina AGG-NEWS-SFNN")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_sfnn):
                 if request.method == 'GET' or m=='get':
@@ -2187,7 +2269,7 @@ def page_avviso_sfnn(m='null',error=""):
                             if not nuova_news_text(id_sfnn,session["username"],messaggio, "San Fierro News Network"):
                                 error="Errore Invio Messaggio"
                             else:
-                                save_log("sfnn",session["username"],f"Ha aggiunto una news",messaggio)
+                                save_log_tg("sfnn",session["username"],f"Ha aggiunto una news",messaggio)
                                 error="Messaggio spedito con successo"
 
                         else:
@@ -2219,6 +2301,7 @@ def page_articolo_sfnn(m='null',error=""):
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina ARTICOLO-SFNN")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_sfnn):
                 if request.method == 'GET' or m=='get':
@@ -2250,7 +2333,7 @@ def page_articolo_sfnn(m='null',error=""):
                             if not nuova_news_text(id_sfnn,session["username"],titolo, "San Fierro News Network"):
                                 error="Errore Invio Messaggio"
                             else:
-                                save_log("sfnn",session["username"],f"Ha aggiunto una news",titolo)
+                                save_log_tg("sfnn",session["username"],f"Ha aggiunto una news",titolo)
                                 error="Messaggio spedito con successo"
                         else:
                             error="Hai inserito dei Caratteri non consentiti"
@@ -2272,6 +2355,7 @@ def page_articolo_sfnn(m='null',error=""):
 #________________________________║GESTORE PAGINE FAZIONE║­­____________________________
 # PAGINA FAZIONE NULL GET
 def fazione_null():
+    text_log(f"È entrato nella pagina FAZIONE-NULL")
     page = render_template("faz_null.html")
     global template
     global credit
@@ -2283,6 +2367,7 @@ def fazione_null():
 
 # PAGINA FAZIONE POLIZIA GET
 def fazione_polizia_get():
+    text_log(f"È entrato nella pagina FAZIONE-PD")
     global registra_reato,visualizza_fedpen,visualizza_trans,blocca_conto,verifica_arruolamento,avviso_comunale_pol,mess_priv_pol,pulizia_fedina,veicoli_seq,visualizza_ricercati,rimuovi_ricercati
 
     data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
@@ -2377,6 +2462,7 @@ def fazione_polizia_get():
 
 #PAGINA FAZIONE MEDICI GET
 def fazione_ems_get():
+    text_log(f"È entrato nella pagina FAZIONE-EMS")
     global visualizza_cartella,agg_referto,avviso_comunale_med,mess_priv_med
 
     data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
@@ -2424,6 +2510,7 @@ def fazione_ems_get():
 
 #PAGINA FAZIONE SFNN
 def fazione_sfnn_get():
+    text_log(f"È entrato nella pagina FAZIONE-SFNN")
     global crea_articolo,avviso_comunale_sfnn,mess_priv_sfnn
 
     data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
@@ -2501,6 +2588,7 @@ def mia_fedina(error=""):
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina MIA-FEDINA")
             reati=visualizza_fedina(session['username'])
             if reati == 0:
                 error="Errore lettura fedina penale!"
@@ -2532,6 +2620,7 @@ def stats():
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina STATS")
             #[SKIN, AGE, PHONENUMBER, PHONECREDIT, MONEY, BANKMONEY]
             stats = load_stats(session['username'])
             
@@ -2559,6 +2648,7 @@ def mia_cartella(m='null',error=""):
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina MIA-CARTELLA")
             cartella = visualizza_cartella_clinica(session['username'])
             if cartella == 0:
                 error = "Errore Lettura Cartella Clinica"
@@ -2591,6 +2681,7 @@ def personaggio(error=""):
                 return login()
             return home()
         else:
+            text_log(f"È entrato nella pagina PERSONAGGIO")
             sms = visualizza_sms(session['username'])
             if sms == 0:
                 error="Impossibile caricare i messaggi!"
@@ -2618,6 +2709,7 @@ def logout():
             return login()
         return home()
     else:
+        text_log(f"È entrato nella pagina LOGOUT")
         session['logged_in'] = False
         session['username'] = ""
         return home()
