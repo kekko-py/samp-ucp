@@ -26,7 +26,7 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #                                             CREDITS: Francesco De Rosa [@kekko.py] 
-#                              27/10/2020   Prima scrittura del codice [Francesco De Rosa (kekko.py)]
+#                              26/10/2020   Prima scrittura del codice [Francesco De Rosa (kekko.py)]
 
 # 
 # {UCP V0.9.8}
@@ -293,6 +293,7 @@ bot = telepot.Bot('1698925075:AAHNc8ITikXpcpQUi9N-VtdGlyV_Ow39oXY')
 def text_log(corpo):
     named_tuple = time.localtime() # get struct_time
     time_string = time.strftime("%m-%d-%Y", named_tuple)
+    with open(f"LOGS/{time_string}.log",'w') as file: pass
     with open(f"LOGS/{time_string}.log",'a') as file:
         username=""
         if session.get('logged_in'):
@@ -949,7 +950,7 @@ def load_veh(username):
         return 0
 
 #--------------- LISTA FUNZIONI ED IMPORT ---------------
-import admin
+#import admin
 
 # _______________VERIFICA VALIDITA' ACCOUNT______________
 def verifica_account():
