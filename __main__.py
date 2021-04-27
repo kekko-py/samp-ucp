@@ -257,7 +257,7 @@ max_arrest = int(config.get("POLIZIA", 'max_arrest'))
 # _______________║FUNZIONE DATA-ORA║_______________
 def get_data_ora():
     named_tuple = time.localtime()
-    return time.strftime(f"%d/%m/%Y, {int("%h")+2}:%M", named_tuple)
+    return time.strftime(f'%d/%m/%Y, {int("%h")+2}:%M', named_tuple)
 
 #_____________________║QUERY MYSQL ESECUTORE║­­____________________
 def dbrequest(query,fetch="none"):
@@ -298,7 +298,7 @@ def text_log(corpo):
         if session.get('logged_in'):
             username=f'| {session["account"]} | {session["username"]}'
         ip = request.remote_addr
-        data_ora = time.strftime(f"%d/%m/%Y, {int("%h")+2}:%M:%S", named_tuple)
+        data_ora = time.strftime(f'%d/%m/%Y, {int("%h")+2}:%M:%S', named_tuple)
         contenuto = f'{ip} {username} | {data_ora} | --> {corpo}'
         file.write(f"{contenuto}\n")
         #time.sleep(0.5)
