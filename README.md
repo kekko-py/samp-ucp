@@ -1,4 +1,4 @@
-{UCP V0.9.8}
+﻿{UCP V0.9.8}
 
 SEZIONI:
 
@@ -64,3 +64,12 @@ FUNZIONALITÀ FAZIONI:
 	  • Aggiunta funzione nuova formattazione orario
 	  • Modificato il template della sezione regolamenti      
 
+-------------------------------------------------------------
+
+{UCP V1.1.1} Primo sviluppo 09/05/2021 [Francesco De Rosa (kekko.py)]
+
+   	  • Fixata   | Grandezza logo [SCELTA PG]
+   	  • Fixato   | il POST [SCELTA PG]
+   	  • Fixata   | data_ora [NEWS]
+    	  • Inserito | Sistema Ban pg dinamico
+    	  • Fixato   | se il campo multa è vuoto imposta come segnalazione

@@ -95,10 +95,19 @@
 #   • Aggiunta funzione nuova formattazione orario
 #   • Modificato il template della sezione regolamenti      
 
+#-------------------------------------------------------------
+
+# {UCP V1.1.1} Primo sviluppo 09/05/2021 [Francesco De Rosa (kekko.py)]
+
+#   • Fixata   | Grandezza logo [SCELTA PG]
+#   • Fixato   | il POST [SCELTA PG]
+#   • Fixata   | data_ora [NEWS]
+#   • Inserito | Sistema Ban pg dinamico
+#   • Fixato   | se il campo multa è vuoto imposta come segnalazione
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 ################################################################################################################################
-VERSIONE_APP = "1.1.0"
+VERSIONE_APP = "1.1.1"
 
 #_______________CREDITI__________________
 def credts_spam():
@@ -189,6 +198,7 @@ id_null = int(config.get("FAZIONI", 'null'))
 id_pula = int(config.get("FAZIONI", 'polizia'))
 id_ems = int(config.get("FAZIONI", 'medici'))
 id_sfnn = int(config.get("FAZIONI", 'sfnn'))
+#id_fbi = int(config.get("FAZIONI", 'fbi'))
 # _______________VARIABILI GLOBALI WEB-APP_______________
 __app__ = Flask(__name__)
 __state__ = int(config.get("WEB-APP", 'state'))
@@ -275,6 +285,12 @@ def dbrequest(query,fetch="none"):
 
     if data!=0: return data
 
+#_____________________║VERIFICA ACCOUNT PLAYER║­­____________________
+def verifica_player(pg):
+    banned = dbrequest(f'SELECT banned FROM personaggi WHERE nome="{pg}"', "fetchone")
+    if banned[0]==1:
+        return 0
+    return 1
 #_____________________║CONTROLLO INPUT ESTERNO║­­____________________
 #Per eventuali attacchi mysql injectiond
 def controllo_input(string):
@@ -432,7 +448,8 @@ def nuovo_reato(user,reato,multa,prigione,ricercato,poliziotto):
                 new=1
 
             if bool(new):
-                if not sms_send(911,user,f"Sig. {user}, è pregato/a di raggiungerci in questura e costituirsi ammettendo le sue accuse.\nLe accuse sono:\n{reato}."):
+                data = dbrequest(f'SELECT PhoneNumber FROM personaggi WHERE nome="{user}"', "fetchone")
+                if not sms_send(911,data[0],f"Sig. {user}, è pregato/a di raggiungerci in questura e costituirsi ammettendo le sue accuse.\nLe accuse sono:\n{reato}."):
                     return 0
                 dbrequest(f'INSERT INTO ricercati (poliziotto,ricercato,motivazione,data_ora) VALUES ("{poliziotto}","{user}","{reato}","{data_ora}")')
                 save_log_tg("pd",poliziotto,"Ha messo ricercato "+user,reato)
@@ -1061,7 +1078,28 @@ def page_not_found(e):
     except:
         print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
         return quit()
-    
+
+#----------------------------------------------
+#[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
+#________________________________║GESTORE PAGINA BANNATI║­­____________________________
+@__app__.route('/banned', methods=['GET'])
+def banned_page():
+    text_log(f"È entrato nella pagina BANNATI")
+    if __state__ == 1:
+            try:
+                if session["banned"]==1:
+                    session['logged_in'] = False
+                    session["pg"][0]=session["pg"][1]=session["pg"][2]=""
+
+                    return render_template("banned.html")
+                else:
+                    return page_not_found(404)
+
+            except: 
+                return page_not_found(404)
+
+    else:
+        return render_template("state0.html")
 #----------------------------------------------
 #[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
 #________________________________║GESTORE PAGINA LOGIN║­­____________________________
@@ -1076,7 +1114,11 @@ def login_get(error=" "):
             template = render_template("template_panel.html", versione=VERSIONE_APP, sez_reg=sez_reg, sez_vip=sez_vip, sez_news=sez_news, sez_maze=sez_maze, sez_digit=sez_digit, sez_fazione=sez_fazione, sez_concessionaria=sez_concessionaria, sez_personaggio=sez_personaggio, sez_ringraziamenti=sez_ringraziamenti)
             return login
         else:
-            if sez_reg:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
+            elif sez_reg:
                 return reg()
             elif sez_vip:
                 return vip()
@@ -1144,9 +1186,15 @@ def scelta_pg():
                 session['pg'][1] = data[1]
                 session['pg'][2] = data[2]
             except:
-                return login_get("Devi prima eseguire l'autenticazione!")
+                return redirect(url_for('login_get'))
+            
+            for pg in session['pg']:
+                if pg!="(nuovo personaggio)":
+                    if verifica_player(pg)==1: return render_template("scelta_pg.html", versione=VERSIONE_APP ,pg=session['pg'])
+                    else: 
+                        session["banned"] = 1
+                        return redirect(url_for('banned_page'))
 
-            return render_template("scelta_pg.html", versione=VERSIONE_APP ,pg=session['pg'])
         else:
             pg = request.form['pg']
 
@@ -1156,7 +1204,7 @@ def scelta_pg():
                 text_log(f"SCELTA PG POST")
                 return controllo_iban()
             else: 
-                return login_get("EH VOLEVIIII")
+                return redirect(url_for('login_get'))
     else:
         return render_template("state0.html")
 
@@ -1170,6 +1218,10 @@ def reg():
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina REGOLAMENTI")
             reg_page = render_template("sez_reg.html")
             global template
@@ -1192,6 +1244,10 @@ def vip():
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina REGOLAMENTI")
             paypal = config.get("ACCOUNT", 'email_paypal')
             bronze = config.get("VIP", 'bronze')
@@ -1233,6 +1289,10 @@ def news():
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina NEWS")
             notizie=[]
             data = dbrequest('SELECT * FROM news ORDER BY id DESC', "fetchall")
@@ -1365,6 +1425,10 @@ def banca_get(error=""):
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina MAZE")
             data = dbrequest(query19+f'"{session["username"]}"', "fetchone")
             iban = data[0]
@@ -1397,6 +1461,10 @@ def digit_coin_get(error=""):
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina DIGITCOIN")
             data = dbrequest(query19+f'"{session["username"]}"', "fetchone")
             iban = data[0]
@@ -1428,6 +1496,10 @@ def ringraziamenti():
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina RINGRAZIAMENTI")
             reg_page = render_template("sez_ringraziamenti.html")
             global template
@@ -1456,6 +1528,10 @@ def page_reg_reato(m='null',error=""):
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina REG-REATO")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
@@ -1474,7 +1550,10 @@ def page_reg_reato(m='null',error=""):
                     try:
                         sospetto = request.form['sospetto']
                         reato = request.form['reato']
-                        multa = int(request.form['multa'])
+                        try:
+                            multa = int(request.form['multa'])
+                        except:
+                            multa = 0
 
                         prigione = ricercato = 0
 
@@ -1523,6 +1602,10 @@ def page_fedina(m='null',error="",utente_cercato=""):
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina FEDINA-PD")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
@@ -1580,6 +1663,10 @@ def page_trans(m='null',error="",utente_cercato=" "):
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+        
             text_log(f"È entrato nella pagina TRANSAZIONI-PD")
             data = dbrequest(query21+f'"{session["username"]}"',"fetchone")
             if int(data[0]) == int(id_pula):
@@ -1638,6 +1725,10 @@ def page_send_sms_pd(m='null',error=""):
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina SEND-SMS-PD")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
@@ -1689,6 +1780,10 @@ def page_avviso_pd(m='null',error=""):
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina AVVISO-PD")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
@@ -1740,6 +1835,10 @@ def page_ver_arruolamento(m='null',error="",utente_cercato=""):
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina VER-ARRUOLAMENTO-PD")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
@@ -1801,6 +1900,10 @@ def page_pulisci_fedina(m='null',error=""):
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina PULISCI-FEDINA-PD")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
@@ -1850,6 +1953,10 @@ def page_rimuovi_ricercato(m='null',error=""):
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina RIMUOVI-RICERCATO-PD")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
@@ -1899,6 +2006,10 @@ def veh_seq(m='null',error=""):
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina VEICOLI-SEQ-PD")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
@@ -1942,6 +2053,10 @@ def ricercati(m='null',error=""):
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina RICERCATI-PD")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_pula):
@@ -1988,6 +2103,10 @@ def page_agg_referto(m='null',error=""):
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina NUOVO-REFERTO-EMS")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_ems):
@@ -2039,6 +2158,10 @@ def page_cartella_clinica(m='null',error="",utente_cercato=""):
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina CARTELLA-CLINICA-EMS")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_ems):
@@ -2094,6 +2217,10 @@ def page_avviso_ems(m='null',error=""):
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina AGG-AVVISO-EMS")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_ems):
@@ -2143,6 +2270,10 @@ def page_send_sms_ems(m='null',error=""):
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina SEND-SMS-EMS")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_ems):
@@ -2196,6 +2327,10 @@ def page_send_sms_sfnn(m='null',error=""):
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina SEND-SMS-SFNN")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_sfnn):
@@ -2246,6 +2381,10 @@ def page_avviso_sfnn(m='null',error=""):
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina AGG-NEWS-SFNN")
             data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
             if int(data[0]) == int(id_sfnn):
@@ -2557,6 +2696,10 @@ def fazione(error=""):
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             try:
                 
                 data = dbrequest(f'SELECT Faction FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
@@ -2588,6 +2731,10 @@ def mia_fedina(error=""):
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina MIA-FEDINA")
             reati=visualizza_fedina(session['username'])
             if reati == 0:
@@ -2620,6 +2767,10 @@ def stats():
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina STATS")
             #[SKIN, AGE, PHONENUMBER, PHONECREDIT, MONEY, BANKMONEY]
             stats = load_stats(session['username'])
@@ -2648,6 +2799,10 @@ def mia_cartella(m='null',error=""):
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina MIA-CARTELLA")
             cartella = visualizza_cartella_clinica(session['username'])
             if cartella == 0:
@@ -2681,6 +2836,10 @@ def personaggio(error=""):
                 return login()
             return home()
         else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
             text_log(f"È entrato nella pagina PERSONAGGIO")
             sms = visualizza_sms(session['username'])
             if sms == 0:
@@ -2709,6 +2868,10 @@ def logout():
             return login()
         return home()
     else:
+        if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
         text_log(f"È entrato nella pagina LOGOUT")
         session['logged_in'] = False
         session['username'] = ""
