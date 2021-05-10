@@ -418,7 +418,7 @@ def visualizza_sms(user):
 #_____________________║NEWS SYSTEM║­­____________________        
 def nuova_news_text(id_faz,autore,news,fazione):
     try:
-        tempo_attuale = time.ctime()
+        tempo_attuale = get_data_ora()
         dbrequest(f'INSERT INTO news (fazid, autore, text_news, data_ora, fazione, immagine, prezzo, numero) VALUES ({id_faz},"{autore}","{news}","{tempo_attuale}","{fazione}","N/A",0,0)')
         text_log(f"Ha fatto una nuova news, {fazione}, {news}")
         return 1
