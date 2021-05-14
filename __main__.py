@@ -104,6 +104,18 @@
 #   • Fixata   | data_ora [NEWS]
 #   • Inserito | Sistema Ban pg dinamico
 #   • Fixato   | se il campo multa è vuoto imposta come segnalazione
+
+#-------------------------------------------------------------
+
+# {UCP V1.1.2} Primo sviluppo 14/05/2021 [Francesco De Rosa (kekko.py)]
+
+#   • Aggiunto | Campo motivazione Veicoli seq [POLIZIA]
+#   • Aggiunta | Funzione Registra Veicolo ricercato [POLIZIA]
+#   • Aggiunta | Funzione Rimuovi Veicolo ricercato [POLIZIA]
+#   • Aggiunta | Funzione Visualizza Veicoli ricercati [POLIZIA]
+#   • Modificato | Link ck-selfck [SEZ. REG]
+#   • Aggiunti | Messaggi esemplificativi FORM [POLIZIA]
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 ################################################################################################################################
@@ -226,6 +238,9 @@ pulizia_fedina = int(funzionalita.get("POLIZIA",'pulizia_fedina'))
 veicoli_seq = int(funzionalita.get("POLIZIA",'veicoli_seq'))
 visualizza_ricercati = int(funzionalita.get("POLIZIA",'visualizza_ricercati'))
 rimuovi_ricercati = int(funzionalita.get("POLIZIA",'rimuovi_ricercati'))
+add_veh_ricercato = int(funzionalita.get("POLIZIA",'add_veh_ricercato'))
+rim_veh_ricercato = int(funzionalita.get("POLIZIA",'rim_veh_ricercato'))
+visualizza_veh_ricercati = int(funzionalita.get("POLIZIA",'visualizza_veh_ricercati'))
 
 visualizza_cartella = int(funzionalita.get("MEDICI",'visualizza_cartella'))
 agg_referto =  int(funzionalita.get("MEDICI",'agg_referto'))
@@ -248,6 +263,9 @@ rank_pulizia_fedina = int(rank_funzionalita.get("POLIZIA",'pulizia_fedina'))
 rank_veicoli_seq = int(rank_funzionalita.get("POLIZIA",'rank_veicoli_seq'))
 rank_visualizza_ricercati = int(rank_funzionalita.get("POLIZIA",'visualizza_ricercati'))
 rank_rimuovi_ricercati = int(rank_funzionalita.get("POLIZIA",'rimuovi_ricercati'))
+rank_add_veh_ricercato = int(rank_funzionalita.get("POLIZIA",'add_veh_ricercato'))
+rank_rim_veh_ricercato = int(rank_funzionalita.get("POLIZIA",'rim_veh_ricercato'))
+rank_visualizza_veh_ricercati = int(rank_funzionalita.get("POLIZIA",'visualizza_veh_ricercati'))
 
 rank_visualizza_cartella = int(rank_funzionalita.get("MEDICI",'visualizza_cartella'))
 rank_agg_referto =  int(rank_funzionalita.get("MEDICI",'agg_referto'))
@@ -854,7 +872,7 @@ def modelli_auto(id):
 def visualizza_sequestri():
     try:
         veicoli = []
-        data = dbrequest("SELECT * FROM veicoli_sequestrati", "fetchall")
+        data = dbrequest("SELECT * FROM veicoli_sequestrati ORDER BY id DESC", "fetchall")
         for i in data:
             id_veh = i[1]
             poliziotto = i[2]
@@ -875,6 +893,58 @@ def visualizza_sequestri():
             intestazione = f"Il veicolo {modello} è stato sequestrato"
             contenuto1 = f"- Sequestrato da {poliziotto}"
             contenuto2 = f"- TARGA: ({targa})"
+            contenuto3 = f"- PROPRIETARIO: ({owner})"
+            contenuto4 = f"- {assicurata}"
+
+            veicoli.append([intestazione,motivazione,contenuto1,contenuto2,contenuto3,contenuto4,data_ora])
+
+        return veicoli   
+    except:
+        return 0
+
+def new_veh_ric(id_veh,motivazione):
+    try:
+        data_ora = get_data_ora()
+        dbrequest(f'INSERT INTO veh_ricercati(id_veh,poliziotto,data_ora,motivazione) VALUES ({id_veh},"{session["username"]}","{data_ora}","{motivazione}")')
+        return 1
+    except:
+        return 0
+    
+
+def rim_veh_ric(id_veh,motivazione):
+    try:
+        dbrequest(f'DELETE FROM veh_ricercati WHERE id_veh={id_veh}')
+        data_ora = get_data_ora()
+        save_log_tg("pd",session["username"],f"Rimosso veicolo ricercato SF00{id_veh}",motivazione)
+        text_log(f"Ha rimosso il veicolo ricercato {id_veh}, motivazione= {motivazione}")
+        return 1
+    except:  
+        return 0 
+
+def vis_veh_ric():
+    try:
+        veicoli = []
+        data = dbrequest("SELECT * FROM veh_ricercati ORDER BY id DESC", "fetchall")
+        for i in data:
+            id_veh = i[1]
+            poliziotto = i[2]
+            data_ora = i[3]
+            motivazione = i[4]
+
+            dativeicolo = dbrequest(f"SELECT Model,Owner,Assicurazione,Targa FROM vehicles WHERE ID={id_veh}", "fetchone")
+            modello = modelli_auto(int(dativeicolo[0]))
+            owner = dativeicolo[1]
+
+            if int(dativeicolo[2]):
+                assicurata = "Il veicolo è ASSICURATO"
+            else:
+                assicurata = "Il veicolo NON È ASSICURATO"
+
+            targa = dativeicolo[3]
+
+            intestazione = f"Il veicolo {modello} è ricercato"
+            contenuto1 = f"- Segnalato da {poliziotto}"
+            contenuto2 = f"- TARGA: ({targa}) - ID: ({id_veh})"
             contenuto3 = f"- PROPRIETARIO: ({owner})"
             contenuto4 = f"- {assicurata}"
 
@@ -2088,6 +2158,161 @@ def ricercati(m='null',error=""):
     else:
         return page_not_found(404)
 
+
+@__app__.route('/add-veh-ric', methods=['GET','POST'])
+def page_add_veh_ric(m='null',error=""):
+    try:
+        data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
+        rank=int(data[0])
+    except:
+        return home()
+    if sez_fazione and add_veh_ricercato and rank <= rank_add_veh_ricercato:
+        if not session.get('logged_in'):
+            if request.method == 'POST':
+                return login()
+            return home()
+        else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
+            text_log(f"È entrato nella pagina AGG VEH RICERCATI")
+            data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
+            if int(data[0]) == int(id_pula):
+                if request.method == 'GET' or m=='get':
+                    page = render_template("pd/add_veh_ric.html", error=error)
+
+                    global template
+                    global credit
+                    try:
+                        pagina = template % (credit, page)
+                        return pagina
+                    except:
+                        print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
+                        return quit()
+                else:
+                    try:
+                        id_veh = request.form['id_veh']
+                        motivazione = request.form['motivazione']
+
+                        if controllo_input(id_veh) and controllo_input(motivazione):
+                            error=""
+                            if not new_veh_ric(id_veh,motivazione):
+                                error="Errore Registrazione"
+                            else:
+                                save_log_tg("pd",session["username"],f"Ha impostato come ricercato il veicolo targato: SF00{id_veh}",motivazione)
+                                error="Registrazione avvenuta con successo"
+                                
+
+                        else:
+                            error="Hai inserito dei Caratteri non consentiti"    
+                    except:
+                        error = "Compila tutti i Campi!"
+                    return page_add_veh_ric("get",error)
+            else:
+                 return page_not_found(404)
+    else:
+        return page_not_found(404)     
+
+@__app__.route('/rim-veh-ric', methods=['GET','POST'])
+def page_rim_veh_ric(m='null',error=""):
+    try:
+        data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
+        rank=int(data[0])
+    except:
+        return home()
+    if sez_fazione and rim_veh_ricercato and rank <= rank_rim_veh_ricercato:
+        if not session.get('logged_in'):
+            if request.method == 'POST':
+                return login()
+            return home()
+        else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
+            text_log(f"È entrato nella pagina RIMUOVI--VEHRICERCATO-PD")
+            data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
+            if int(data[0]) == int(id_pula):
+                if request.method == 'GET' or m=='get':
+                    page = render_template("pd/rimuovi_veh_ricercato.html", error=error)
+
+                    global template
+                    global credit
+                    try:
+                        pagina = template % (credit, page)
+                        return pagina
+                    except:
+                        print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
+                        return quit()
+                else:
+                    try:
+                        id_veh = request.form['id_veh']
+                        motivazione = request.form['motivazione']
+
+                        if controllo_input(id_veh) and controllo_input(motivazione):
+                            error=""
+                            if rim_veh_ric(id_veh,motivazione):
+                                error="Rimosso stato ricercato con successo"
+                            else:
+                                error="Si è Verificato un Problema."
+
+                        else:
+                            error="Hai inserito dei Caratteri non consentiti"    
+                    except:
+                        error = "Compila tutti i Campi!"
+                    return page_rim_veh_ric("get",error)
+            else:
+                 return page_not_found(404)
+    else:
+        return page_not_found(404)
+
+@__app__.route('/veh-ricercati', methods=['GET','POST'])
+def veh_ricercati(m='null',error=""):
+    try:
+        data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
+        rank=int(data[0])
+    except:
+        return home()
+    if sez_fazione and visualizza_veh_ricercati and rank <= rank_visualizza_veh_ricercati:
+        if not session.get('logged_in'):
+            if request.method == 'POST':
+                return login()
+            return home()
+        else:
+            if verifica_player(session["username"])==0:
+                session["banned"]=1 
+                return redirect(url_for('banned_page'))
+
+            text_log(f"È entrato nella pagina VEH-RICERCATI-PD")
+            data = dbrequest(query21+f'"{session["username"]}"', "fetchone")
+            if int(data[0]) == int(id_pula):
+                if request.method == 'GET' or m=='get':
+
+                    ricercati = vis_veh_ric()
+
+                    if ricercati==0: 
+                        error = "Errore lettura veicoli ricercati"
+                    elif len(ricercati) == 0:
+                        error = "Nessun veicolo ricercato"
+                    else:
+                        error=""
+                    
+                    page = render_template("pd/visualizza_veh_ricercati.html", error=error, ricercati=ricercati, len_ricercati=len(ricercati))
+
+                    global template
+                    global credit
+                    try:
+                        pagina = template % (credit, page)
+                        return pagina
+                    except:
+                        print(Fore.RED +"Crediti Della Web-App RIMOSSI, Web-APP SPENTA, RIAVVIARE!")
+                        return quit()
+            else:
+                 return page_not_found(404)
+    else:
+        return page_not_found(404)
+
 #[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
 #________________________________║SEZIONI MEDICI║­­____________________________
 
@@ -2508,7 +2733,20 @@ def fazione_null():
 # PAGINA FAZIONE POLIZIA GET
 def fazione_polizia_get():
     text_log(f"È entrato nella pagina FAZIONE-PD")
-    global registra_reato,visualizza_fedpen,visualizza_trans,blocca_conto,verifica_arruolamento,avviso_comunale_pol,mess_priv_pol,pulizia_fedina,veicoli_seq,visualizza_ricercati,rimuovi_ricercati
+    global registra_reato, \
+           visualizza_fedpen, \
+           visualizza_trans, \
+           blocca_conto, \
+           verifica_arruolamento, \
+           avviso_comunale_pol, \
+           mess_priv_pol, \
+           pulizia_fedina, \
+           veicoli_seq, \
+           visualizza_ricercati, \
+           rimuovi_ricercati, \
+           add_veh_ricercato, \
+           visualizza_veh_ricercati, \
+           rim_veh_ricercato
 
     data = dbrequest(f'SELECT Rank FROM personaggi WHERE nome="{session["username"]}"', "fetchone")
     rank=int(data[0])
@@ -2524,6 +2762,9 @@ def fazione_polizia_get():
     loc_veicoli_seq = int(funzionalita.get("POLIZIA",'veicoli_seq'))
     loc_visualizza_ricercati = int(funzionalita.get("POLIZIA",'visualizza_ricercati'))
     loc_rimuovi_ricercati = int(funzionalita.get("POLIZIA",'rimuovi_ricercati'))
+    loc_add_veh_ricercato = int(funzionalita.get("POLIZIA",'add_veh_ricercato'))
+    loc_visualizza_veh_ricercati = int(funzionalita.get("POLIZIA",'visualizza_veh_ricercati'))
+    loc_rim_veh_ricercato = int(funzionalita.get("POLIZIA",'rim_veh_ricercato'))
 
     if loc_registra_reato:
         if not (rank <= rank_registra_reato):
@@ -2591,7 +2832,41 @@ def fazione_polizia_get():
         else:
             rimuovi_ricercati=1
 
-    page = render_template("faz_pula.html", registra_reato=registra_reato, visualizza_fedina=visualizza_fedpen, visualizza_trans=visualizza_trans, blocca_conto=blocca_conto, verifica_arruolamento=verifica_arruolamento, avviso_comunale=avviso_comunale_pol, mess_priv=mess_priv_pol, pulizia_fedina=pulizia_fedina, veicoli_seq=veicoli_seq, rimuovi_ricercati=rimuovi_ricercati, visualizza_ricercati=visualizza_ricercati)
+    if loc_add_veh_ricercato:
+        if not (rank <= rank_add_veh_ricercato): 
+            add_veh_ricercato=0
+        else:
+            add_veh_ricercato=1
+    
+    if loc_visualizza_veh_ricercati:
+        if not (rank <= rank_visualizza_veh_ricercati): 
+            visualizza_veh_ricercati=0
+        else:
+            visualizza_veh_ricercati=1
+
+    if loc_rim_veh_ricercato:
+        if not (rank <= rank_rim_veh_ricercato): 
+            rim_veh_ricercato=0
+        else:
+            rim_veh_ricercato=1
+    
+
+    page = render_template("faz_pula.html", 
+                            registra_reato=registra_reato, 
+                            visualizza_fedina=visualizza_fedpen, 
+                            visualizza_trans=visualizza_trans, 
+                            blocca_conto=blocca_conto, 
+                            verifica_arruolamento=verifica_arruolamento, 
+                            avviso_comunale=avviso_comunale_pol, 
+                            mess_priv=mess_priv_pol, 
+                            pulizia_fedina=pulizia_fedina, 
+                            veicoli_seq=veicoli_seq, 
+                            rimuovi_ricercati=rimuovi_ricercati, 
+                            visualizza_ricercati=visualizza_ricercati,
+                            add_veh_ricercato=add_veh_ricercato,
+                            visualizza_veh_ricercati=visualizza_veh_ricercati,
+                            rim_veh_ricercato=rim_veh_ricercato)
+
     global template
     global credit
     try:

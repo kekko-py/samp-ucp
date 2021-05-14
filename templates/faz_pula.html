@@ -211,6 +211,46 @@
                       </div>
                   </div>
                   {%endif%}
+
+                  {%if add_veh_ricercato:%}
+                 <div class="col price-table">
+                      <div class="card text-center">
+                        <a href="/add-veh-ric">
+                          <div class="title">
+                              <i class="fa fa-paper-plane"></i>
+                              <h2>Registra veicolo ricercato</h2>
+                          </div>
+                        </a>
+                      </div>
+                  </div>
+                  {%endif%}
+
+                  {%if rim_veh_ricercato:%}
+                 <div class="col price-table">
+                      <div class="card text-center">
+                        <a href="/rim-veh-ric">
+                          <div class="title">
+                              <i class="fa fa-paper-plane"></i>
+                              <h2>Rimuovi veicolo ricercato</h2>
+                          </div>
+                        </a>
+                      </div>
+                  </div>
+                  {%endif%}
+
+                  {%if visualizza_veh_ricercati:%}
+                 <div class="col price-table">
+                      <div class="card text-center">
+                        <a href="/veh-ricercati">
+                          <div class="title">
+                              <i class="fa fa-paper-plane"></i>
+                              <h2>Visualizza veicoli ricercati</h2>
+                          </div>
+                        </a>
+                      </div>
+                  </div>
+                  {%endif%}
+
                   <!-- (1) ===================================-->
                   {%if visualizza_fedina:%}
                   <div class="col price-table">

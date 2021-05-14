@@ -1,0 +1,20 @@
+<div class="container">
+</nav>
+<p style="color: lightsalmon;">{{error}}</p>
+<br>
+<!--ricercati.append([intestazione,motivazione,contenuto1,contenuto2,contenuto3,contenuto4,data_ora])-->
+{%for ricercato in range(len_ricercati)%}
+  <div class="alert alert-warning" role="alert">
+      <h5>{{ricercati[ricercato][0]}}</h5>
+      <p>{{ricercati[ricercato][1]}}</p>
+      <hr>
+      <p>{{ricercati[ricercato][2]}}</p>
+      <p>{{ricercati[ricercato][3]}}</p>
+      <p>{{ricercati[ricercato][4]}}</p>
+      <p>{{ricercati[ricercato][5]}}</p>
+      <hr>
+      <p>{{ricercati[ricercato][6]}}</p>
+  </div>
+{%endfor%}
+
+</div>
