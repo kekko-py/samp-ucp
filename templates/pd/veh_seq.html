@@ -2,16 +2,18 @@
 </nav>
 <p style="color: lightsalmon;">{{error}}</p>
 <br>
-<!--veicoli.append([intestazione,contenuto1,contenuto2,contenuto3,contenuto4,data_ora])-->
+<!--veicoli.append([intestazione,motivazione,contenuto1,contenuto2,contenuto3,contenuto4,data_ora])-->
 {%for veicolo in range(len_veicoli)%}
   <div class="alert alert-warning" role="alert">
       <h5>{{veicoli[veicolo][0]}}</h5>
       <p>{{veicoli[veicolo][1]}}</p>
+      <hr>
       <p>{{veicoli[veicolo][2]}}</p>
       <p>{{veicoli[veicolo][3]}}</p>
       <p>{{veicoli[veicolo][4]}}</p>
-      <hr>
       <p>{{veicoli[veicolo][5]}}</p>
+      <hr>
+      <p>{{veicoli[veicolo][6]}}</p>
   </div>
 {%endfor%}
 

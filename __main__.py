@@ -859,6 +859,7 @@ def visualizza_sequestri():
             id_veh = i[1]
             poliziotto = i[2]
             data_ora = i[3]
+            motivazione = i[4]
 
             dativeicolo = dbrequest(f"SELECT Model,Owner,Assicurazione,Targa FROM vehicles WHERE ID={id_veh}", "fetchone")
             modello = modelli_auto(int(dativeicolo[0]))
@@ -877,7 +878,7 @@ def visualizza_sequestri():
             contenuto3 = f"- PROPRIETARIO: ({owner})"
             contenuto4 = f"- {assicurata}"
 
-            veicoli.append([intestazione,contenuto1,contenuto2,contenuto3,contenuto4,data_ora])
+            veicoli.append([intestazione,motivazione,contenuto1,contenuto2,contenuto3,contenuto4,data_ora])
 
         return veicoli   
     except:
